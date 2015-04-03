@@ -1,7 +1,7 @@
 PostgreSQL Dockerfile
 ==================
 
-This project can be used to deploy a PostgreSQL server inside a Docker container. There are two kinds of deployment types for this container, standalone and replicated. When the container is deployed in a replicated deployment the container can serve one of two roles master and slave. Finally, the container also supports continuous archiving to S3 as an additional measure of precaution.
+This project can be used to deploy a PostgreSQL server inside a Docker container. There are two kinds of deployment types for this container standalone and replicated. When the container is deployed in a replicated deployment the container can serve one of two roles master and slave. Finally, the container also supports continuous archiving to S3 as an additional measure of precaution.
 
 
 ### Deployment Environment Variables
