@@ -31,6 +31,18 @@ def pg_get_configuration():
 	# Get the database share buffers size.
 	value = os.getenv('PG_SHARED_BUFFERS', '128')
 	configuration.update({ 'shared_buffers': value })
+	# Get the database write ahead log level.
+	value = os.getenv('PG_WAL_LEVEL', 'minimal')
+	configuration.update({ 'wal_level': value })
+	# Get the number of database checkpoint segments.
+	value = os.getenv('PG_CHECKPOINT_SEGMENTS', 32)
+	configuration.update({ 'checkpoint_segments': value })
+	# Get the number of write ahead log senders.
+	value = os.getenv('PG_MAX_WAL_SENDERS', 3)
+	configuration.update({ 'max_wal_senders': value })
+	# Get the number of write ahead log segments to keep around for replication.
+	value = os.getenv('PG_WAL_KEEP_SEGMENTS', 8)
+	configuration.update({ 'wal_keep_segments': value })
 	return configuration
 
 def pg_set_password(password):

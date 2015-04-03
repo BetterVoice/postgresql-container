@@ -23,3 +23,11 @@ This project can be used to deploy a PostgreSQL server inside a Docker container
 **PG_SHARED_BUFFERS** - Sets the amount of memory the database server uses for shared memory buffers in megabytes. (default: 128)
 
 **PG_DATA_DIRECTORY** - Specifies the directory to use for data storage. (default: /var/lib/postgresql/9.3/main)
+
+**PG_WAL_LEVEL** - Determines how much information is written to the WAL. (default: minimal)
+
+**PG_CHECKPOINT_SEGMENTS** - Maximum number of log file segments between automatic WAL checkpoints (each segment is normally 16 megabytes). (default: 32)
+
+**PG_MAX_WAL_SENDERS** - Specifies the maximum number of concurrent connections from standby servers or streaming base backup clients. (default: 3)
+
+**PG_WAL_KEEP_SEGMENTS** - Specifies the minimum number of past log file segments kept in the pg_xlog directory, in case a standby server needs to fetch them for streaming replication. (default: 8)
