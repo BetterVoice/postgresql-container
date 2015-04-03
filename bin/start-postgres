@@ -1,0 +1,78 @@
+#!/usr/bin/python
+
+from jinja2 import Environment, FileSystemLoader
+from subprocess import check_call
+
+import os
+
+def pg_get_configuration():
+	configuration = { }
+	# Get the deployment type.
+	value = os.getenv('PG_DEPLOYMENT_TYPE', 'standalone')
+	configuration.update({ 'deployment_type': value })
+	# Get the container role.
+	value = os.getenv('PG_ROLE', 'master')
+	configuration.update({ 'role': value })
+	# Get the postgres user password.
+	value = os.getenv('PG_PASSWORD', 'bettervoice')
+	configuration.update({ 'password': value })
+	# Get the IP addresses that are allowed to connect to the db.
+	value = os.getenv('PG_ALLOWED_ADDRESSES', '0.0.0.0/0').split(',')
+	configuration.update({ 'allowed_addresses': value })
+	# Get the database data directory.
+	value = os.getenv('PG_DATA_DIRECTORY', '/var/lib/postgresql/9.3/main')
+	configuration.update({ 'data_directory': value })
+	# Get the maximum number of connections allowed to the db.
+	value = os.getenv('PG_MAX_CONNECTIONS', 100)
+	configuration.update({ 'max_connections': value })
+	# Get the port number for the db to listen on.
+	value = os.getenv('PG_PORT', 5432)
+	configuration.update({ 'port': value })
+	# Get the database share buffers size.
+	value = os.getenv('PG_SHARED_BUFFERS', '128')
+	configuration.update({ 'shared_buffers': value })
+	return configuration
+
+def pg_set_password(password):
+	run('sudo', '-u', 'postgres',
+			'psql', '-U', 'postgres', '-d', 'postgres', '-c',
+			'alter user postgres with password \'' + password + '\';')
+
+def run(app, *args):
+	check_call([app] + list(args))
+
+def start(service):
+	check_call(['service', service, 'start'])
+
+def write(template, path):
+	with open(path, "wb") as output:
+		output.write(template)
+
+if __name__ == "__main__":
+	# Initialize Jinja2
+	loader = FileSystemLoader('/usr/share/postgresql/9.3')
+	templates = Environment(loader = loader)
+	# Load the configuration into a dictionary.
+	configuration = pg_get_configuration()
+	# Configure the instance based on the deployment type.
+	if configuration['deployment_type'] == 'replicated':
+		if configuration['role'] == 'master':
+			pass
+		elif configuration['role'] == 'slave':
+			pass
+		else:
+			pass
+	# Write pg_hba.conf
+	pg_hba = templates.get_template('pg_hba.conf.template') \
+										.render(configuration)
+	write(pg_hba, '/etc/postgresql/9.3/main/pg_hba.conf')
+	# Write postgresql.conf
+	postgresql = templates.get_template('postgresql.conf.template') \
+												.render(configuration)
+	write(postgresql, '/etc/postgresql/9.3/main/postgresql.conf')
+	# Start the container.
+	start('postgresql')
+	# Set the default password.
+	pg_set_password(configuration['password'])
+	# Print the log to stdout.
+	run('tail', '-F', '/var/log/postgresql/postgresql-9.3-main.log')
