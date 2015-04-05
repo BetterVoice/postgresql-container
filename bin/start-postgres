@@ -43,6 +43,12 @@ def pg_get_configuration():
 	# Get the number of write ahead log segments to keep around for replication.
 	value = os.getenv('PG_WAL_KEEP_SEGMENTS', 8)
 	configuration.update({ 'wal_keep_segments': value })
+	# Get the user name for replication.
+	value = os.getenv('PG_REPLICATION_USER', 'replicator')
+	configuration.update({ 'replication_user': value })
+	# Get the replication user password.
+	value = os.getenv('PG_REPLICATION_USER_PASSWORD', 'bettervoice')
+	configuration.update({ 'replication_user_password': value })
 	return configuration
 
 def pg_create_replication_user(user, password):
@@ -53,6 +59,9 @@ def pg_run_query(query, database = None):
 		run('sudo', '-u', 'postgres', 'psql', '-U', 'postgres', '-d', database, '-c', query)
 	else:
 		run('sudo', '-u', 'postgres', 'psql', '-U', 'postgres', '-c', query)
+
+def pg_sync(host, data_directory, user, password):
+	run('pg_basebackup', '-h', host, '-D', data_directory, '-U', user, '-P', '-v', '-x')
 
 def pg_set_password(password):
 	pg_run_query('alter user postgres with password \'' + password + '\';', 'postgres')
@@ -73,7 +82,7 @@ if __name__ == "__main__":
 	templates = Environment(loader = loader)
 	# Load the configuration into a dictionary.
 	configuration = pg_get_configuration()
-	# Configure the instance based on the deployment type.
+	# Copy data from the master.
 	if configuration['deployment_type'] == 'replicated':
 		if configuration['role'] == 'slave':
 			pass
@@ -90,8 +99,8 @@ if __name__ == "__main__":
 	# Set the default password.
 	pg_set_password(configuration['password'])
 	# Create the replicator user.
-	if configuration['deployment_type'] == 'replicated' and \
-		 configuration['role'] == 'master':
-		pg_create_replication_user('replicator', 'bettervoice')
+	if configuration['deployment_type'] == 'replicated':
+		pg_create_replication_user(configuration['replication_user'],
+															 configuration['replication_user_password'])
 	# Print the log to stdout.
 	run('tail', '-F', '/var/log/postgresql/postgresql-9.3-main.log')
