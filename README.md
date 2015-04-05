@@ -37,6 +37,8 @@ To run a standalone container with all the default settings.
 
 **PG_WAL_KEEP_SEGMENTS** - Specifies the minimum number of past log file segments kept in the pg_xlog directory, in case a standby server needs to fetch them for streaming replication. (default: 8)
 
+**PG_MASTER_HOST** - The IP address or host name for the master. (default: None)
+
 **PG_REPLICATION_USER** - The user name used by the slave for replication. (default: replicator)
 
 **PG_REPLICATION_USER_PASSWORD** - The password for the replication user. (default: bettervoice)

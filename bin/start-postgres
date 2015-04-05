@@ -43,6 +43,9 @@ def pg_get_configuration():
 	# Get the number of write ahead log segments to keep around for replication.
 	value = os.getenv('PG_WAL_KEEP_SEGMENTS', 8)
 	configuration.update({ 'wal_keep_segments': value })
+	# Get the master host for replication.
+	value = os.getenv('PG_MASTER_HOST', None)
+	configuration.update({ 'master_host': value })
 	# Get the user name for replication.
 	value = os.getenv('PG_REPLICATION_USER', 'replicator')
 	configuration.update({ 'replication_user': value })
@@ -60,8 +63,8 @@ def pg_run_query(query, database = None):
 	else:
 		run('sudo', '-u', 'postgres', 'psql', '-U', 'postgres', '-c', query)
 
-def pg_sync(host, data_directory, user, password):
-	run('pg_basebackup', '-h', host, '-D', data_directory, '-U', user, '-P', '-v', '-x')
+def pg_sync(host, data_directory, user):
+	run('pg_basebackup', '-h', host, '-D', data_directory, '-U', 'postgres', '-P', '-v', '-x')
 
 def pg_set_password(password):
 	pg_run_query('alter user postgres with password \'' + password + '\';', 'postgres')
@@ -85,7 +88,8 @@ if __name__ == "__main__":
 	# Copy data from the master.
 	if configuration['deployment_type'] == 'replicated':
 		if configuration['role'] == 'slave':
-			pass
+			pg_sync(configuration['master_host'], configuration['data_directory'])
+			# TODO: Create recovery.conf
 	# Write pg_hba.conf
 	pg_hba = templates.get_template('pg_hba.conf.template') \
 										.render(configuration)
