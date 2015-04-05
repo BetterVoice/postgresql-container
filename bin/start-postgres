@@ -45,10 +45,17 @@ def pg_get_configuration():
 	configuration.update({ 'wal_keep_segments': value })
 	return configuration
 
+def pg_create_replication_user(user, password):
+	pg_run_query('CREATE USER ' + user + ' REPLICATION LOGIN ENCRYPTED PASSWORD \'' + password + '\';')
+
+def pg_run_query(query, database = None):
+	if database:
+		run('sudo', '-u', 'postgres', 'psql', '-U', 'postgres', '-d', database, '-c', query)
+	else:
+		run('sudo', '-u', 'postgres', 'psql', '-U', 'postgres', '-c', query)
+
 def pg_set_password(password):
-	run('sudo', '-u', 'postgres',
-			'psql', '-U', 'postgres', '-d', 'postgres', '-c',
-			'alter user postgres with password \'' + password + '\';')
+	pg_run_query('alter user postgres with password \'' + password + '\';', 'postgres')
 
 def run(app, *args):
 	check_call([app] + list(args))
@@ -68,11 +75,7 @@ if __name__ == "__main__":
 	configuration = pg_get_configuration()
 	# Configure the instance based on the deployment type.
 	if configuration['deployment_type'] == 'replicated':
-		if configuration['role'] == 'master':
-			pass
-		elif configuration['role'] == 'slave':
-			pass
-		else:
+		if configuration['role'] == 'slave':
 			pass
 	# Write pg_hba.conf
 	pg_hba = templates.get_template('pg_hba.conf.template') \
@@ -86,5 +89,9 @@ if __name__ == "__main__":
 	start('postgresql')
 	# Set the default password.
 	pg_set_password(configuration['password'])
+	# Create the replicator user.
+	if configuration['deployment_type'] == 'replicated' and \
+		 configuration['role'] == 'master':
+		pg_create_replication_user('replicator', 'bettervoice')
 	# Print the log to stdout.
 	run('tail', '-F', '/var/log/postgresql/postgresql-9.3-main.log')
