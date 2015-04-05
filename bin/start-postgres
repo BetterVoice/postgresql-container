@@ -89,7 +89,9 @@ if __name__ == "__main__":
 	if configuration['deployment_type'] == 'replicated':
 		if configuration['role'] == 'slave':
 			pg_sync(configuration['master_host'], configuration['data_directory'])
-			# TODO: Create recovery.conf
+			recovery = templates.get_template('recovery.conf.template') \
+													.render(configuration)
+			write(pg_hba, configuration['data_directory'] + '/recovery.conf')
 	# Write pg_hba.conf
 	pg_hba = templates.get_template('pg_hba.conf.template') \
 										.render(configuration)
