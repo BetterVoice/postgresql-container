@@ -10,7 +10,7 @@ RUN pip install Jinja2 wal-e
 # Post Install Configuration.
 ADD bin/start-postgres /usr/bin/start-postgres
 RUN chmod +x /usr/bin/start-postgres
-ADD bin/heartbeat /usr/share/postgresql/9.3/heartbeat.template
+ADD bin/heartbeat.template /usr/share/postgresql/9.3/heartbeat.template
 ADD conf/postgresql.conf.template /usr/share/postgresql/9.3/postgresql.conf.template
 ADD conf/pg_hba.conf.template /usr/share/postgresql/9.3/pg_hba.conf.template
 ADD conf/recovery.conf.template /usr/share/postgresql/9.3/recovery.conf.template
