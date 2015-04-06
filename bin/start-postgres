@@ -85,13 +85,6 @@ if __name__ == "__main__":
 	templates = Environment(loader = loader)
 	# Load the configuration into a dictionary.
 	configuration = pg_get_configuration()
-	# Copy data from the master.
-	if configuration['deployment_type'] == 'replicated':
-		if configuration['role'] == 'slave':
-			pg_sync(configuration['master_host'], configuration['data_directory'])
-			recovery = templates.get_template('recovery.conf.template') \
-													.render(configuration)
-			write(pg_hba, configuration['data_directory'] + '/recovery.conf')
 	# Write pg_hba.conf
 	pg_hba = templates.get_template('pg_hba.conf.template') \
 										.render(configuration)
@@ -100,6 +93,13 @@ if __name__ == "__main__":
 	postgresql = templates.get_template('postgresql.conf.template') \
 												.render(configuration)
 	write(postgresql, '/etc/postgresql/9.3/main/postgresql.conf')
+	# Copy data from the master and create the recovery file.
+	if configuration['deployment_type'] == 'replicated':
+		if configuration['role'] == 'slave':
+			pg_sync(configuration['master_host'], configuration['data_directory'])
+			recovery = templates.get_template('recovery.conf.template') \
+													.render(configuration)
+			write(pg_hba, configuration['data_directory'] + '/recovery.conf')
 	# Start the container.
 	start('postgresql')
 	# Set the default password.
