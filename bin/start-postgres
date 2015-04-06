@@ -3,7 +3,17 @@
 from jinja2 import Environment, FileSystemLoader
 from subprocess import check_call
 
+import grp
+import pwd
 import os
+
+def chown(path, uid, gid):
+  for root, dirs, files in os.walk(path):
+    for dir in dirs:
+      os.chown(os.path.join(root, dir), uid, gid)
+    for file in files:
+      os.chown(os.path.join(root, file), uid, gid)
+  os.chown(path, uid, gid)
 
 def pg_get_configuration():
 	configuration = { }
@@ -54,6 +64,15 @@ def pg_get_configuration():
 	configuration.update({ 'replication_user_password': value })
 	return configuration
 
+def pg_change_data_directory(directory):
+	run('pg_dropcluster', '--stop', '9.3', 'main')
+	run('pg_createcluster', '-d', directory, '9.3', 'main')
+	# Make sure the postgres user owns the new data directory
+	# and everything underneath it.
+	uid = pwd.getpwnam("postgres").pw_uid
+	gid = grp.getgrnam("postgres").gr_gid
+	chown(directory, uid, gid)
+
 def pg_create_replication_user(user, password):
 	pg_run_query('CREATE USER ' + user + ' REPLICATION LOGIN ENCRYPTED PASSWORD \'' + password + '\';')
 
@@ -64,7 +83,7 @@ def pg_run_query(query, database = None):
 		run('sudo', '-u', 'postgres', 'psql', '-U', 'postgres', '-c', query)
 
 def pg_sync(host, data_directory, user):
-	run('pg_basebackup', '-h', host, '-D', data_directory, '-U', 'postgres', '-P', '-v', '-x')
+	run('pg_basebackup', '-h', host, '-D', data_directory, '-U', 'postgres', '-v', '-x')
 
 def pg_set_password(password):
 	pg_run_query('alter user postgres with password \'' + password + '\';', 'postgres')
@@ -93,6 +112,10 @@ if __name__ == "__main__":
 	postgresql = templates.get_template('postgresql.conf.template') \
 												.render(configuration)
 	write(postgresql, '/etc/postgresql/9.3/main/postgresql.conf')
+	# Initialize the data directory.
+	if configuration['deployment_type'] == 'standalone' or \
+		 configuration['role'] == 'master':
+		pg_change_data_directory(configuration[data_directory])
 	# Copy data from the master and create the recovery file.
 	if configuration['deployment_type'] == 'replicated' and \
 		 configuration['role'] == 'slave':
