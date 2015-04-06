@@ -7,6 +7,14 @@ import grp
 import pwd
 import os
 
+def chmod(path, mode):
+  for root, dirs, files in os.walk(path):
+    for dir in dirs:
+      os.chmod(os.path.join(root, dir), mode)
+    for file in files:
+      os.chmod(os.path.join(root, file), mode)
+  os.chmod(path, mode)
+
 def chown(path, uid, gid):
   for root, dirs, files in os.walk(path):
     for dir in dirs:
@@ -133,6 +141,10 @@ if __name__ == "__main__":
 															 configuration['replication_user_password'])
 		# Start the heartbeat.
 		if configuration['role'] == 'slave':
+			heartbeat = templates.get_template('heartbeat.template') \
+													 .render(configuration)
+			write(heartbeat, '/usr/bin/heartbeat')
+			chmod('/usr/bin/heartbeat', 0755)
 			run('heartbeat')
 	# Print the log to stdout.
 	run('tail', '-F', '/var/log/postgresql/postgresql-9.3-main.log')
