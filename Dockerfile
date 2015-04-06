@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y libffi-dev libssl-dev postgresql-9.3 po
 RUN pip install Jinja2 wal-e
 
 # Post Install Configuration.
+ADD bin/heartbeat /usr/bin/heartbeat
+RUN chmod +x /usr/bin/heartbeat
 ADD bin/start-postgres /usr/bin/start-postgres
 RUN chmod +x /usr/bin/start-postgres
 ADD conf/postgresql.conf.template /usr/share/postgresql/9.3/postgresql.conf.template

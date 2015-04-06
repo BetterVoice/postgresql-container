@@ -94,8 +94,8 @@ if __name__ == "__main__":
 												.render(configuration)
 	write(postgresql, '/etc/postgresql/9.3/main/postgresql.conf')
 	# Copy data from the master and create the recovery file.
-	if configuration['deployment_type'] == 'replicated':
-		if configuration['role'] == 'slave':
+	if configuration['deployment_type'] == 'replicated' and \
+		 configuration['role'] == 'slave':
 			pg_sync(configuration['master_host'], configuration['data_directory'])
 			recovery = templates.get_template('recovery.conf.template') \
 													.render(configuration)
@@ -108,5 +108,8 @@ if __name__ == "__main__":
 	if configuration['deployment_type'] == 'replicated':
 		pg_create_replication_user(configuration['replication_user'],
 															 configuration['replication_user_password'])
+		# Start the heartbeat.
+		if configuration['role'] == 'slave':
+			run('heartbeat')
 	# Print the log to stdout.
 	run('tail', '-F', '/var/log/postgresql/postgresql-9.3-main.log')
