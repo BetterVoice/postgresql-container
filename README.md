@@ -42,3 +42,7 @@ To run a standalone container with all the default settings.
 **PG_REPLICATION_USER** - The user name used by the slave for replication. (default: replicator)
 
 **PG_REPLICATION_USER_PASSWORD** - The password for the replication user. (default: bettervoice)
+
+### WAL-E Environment Variables
+
+**PG_WAL_E_ENABLED** - A flag to enable wal-e continuous archiving to cloud storage.

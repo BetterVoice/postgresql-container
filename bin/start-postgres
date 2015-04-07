@@ -6,6 +6,7 @@ from subprocess import check_call
 import grp
 import pwd
 import os
+import shutil
 
 def chmod(path, mode):
   for root, dirs, files in os.walk(path):
@@ -22,6 +23,17 @@ def chown(path, uid, gid):
     for file in files:
       os.chown(os.path.join(root, file), uid, gid)
   os.chown(path, uid, gid)
+
+def empty(directory):
+	for file in os.listdir(directory):
+		path = os.path.join(directory, file)
+		try:
+			if os.path.isfile(path):
+				os.unlink(path)
+			elif os.path.isdir(path):
+				shutil.rmtree(path)
+		except Exception as exception:
+			print exception
 
 def pg_get_configuration():
 	configuration = { }
@@ -75,8 +87,6 @@ def pg_get_configuration():
 def pg_change_data_directory(directory):
 	run('pg_dropcluster', '--stop', '9.3', 'main')
 	run('pg_createcluster', '-d', directory, '9.3', 'main')
-	# Make sure the postgres user owns the new data directory
-	# and everything underneath it.
 	uid = pwd.getpwnam("postgres").pw_uid
 	gid = grp.getgrnam("postgres").gr_gid
 	chown(directory, uid, gid)
@@ -91,7 +101,11 @@ def pg_run_query(query, database = None):
 		run('sudo', '-u', 'postgres', 'psql', '-U', 'postgres', '-c', query)
 
 def pg_sync(host, data_directory, user):
+	empty(data_directory)
 	run('pg_basebackup', '-h', host, '-D', data_directory, '-U', 'postgres', '-v', '-x')
+	uid = pwd.getpwnam("postgres").pw_uid
+	gid = grp.getgrnam("postgres").gr_gid
+	chown(directory, uid, gid)
 
 def pg_set_password(password):
 	pg_run_query('alter user postgres with password \'' + password + '\';', 'postgres')
@@ -121,16 +135,14 @@ if __name__ == "__main__":
 												.render(configuration)
 	write(postgresql, '/etc/postgresql/9.3/main/postgresql.conf')
 	# Initialize the data directory.
-	if configuration['deployment_type'] == 'standalone' or \
-		 configuration['role'] == 'master':
-		pg_change_data_directory(configuration['data_directory'])
+	pg_change_data_directory(configuration['data_directory'])
 	# Copy data from the master and create the recovery file.
 	if configuration['deployment_type'] == 'replicated' and \
 		 configuration['role'] == 'slave':
 			pg_sync(configuration['master_host'], configuration['data_directory'])
 			recovery = templates.get_template('recovery.conf.template') \
 													.render(configuration)
-			write(pg_hba, configuration['data_directory'] + '/recovery.conf')
+			write(recovery, configuration['data_directory'] + '/recovery.conf')
 	# Start the container.
 	start('postgresql')
 	# Set the default password.
