@@ -161,7 +161,6 @@ if __name__ == "__main__":
 			if configuration['wale_enabled']:
 				pg_base_backup(configuration['data_directory'])
 		elif configuration['role'] == 'slave':
-			# Start the heartbeat.
 			heartbeat = templates.get_template('heartbeat.template') \
 													 .render(configuration)
 			write(heartbeat, '/usr/bin/heartbeat')
