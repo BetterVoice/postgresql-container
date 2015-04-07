@@ -45,4 +45,6 @@ To run a standalone container with all the default settings.
 
 ### WAL-E Environment Variables
 
-**PG_WAL_E_ENABLED** - A flag to enable wal-e continuous archiving to cloud storage.
+This is not meant to be in depth documentation for wal-e which is a continuous archiving framework for postgresql so we highly recommend that you visit the github repo located at [https://github.com/wal-e/wal-e](https://github.com/wal-e/wal-e). In order to configure wal-e provide the necessary environment variables and enable it with the flag below.
+
+**PG_WAL_E_ENABLED** - A flag to enable wal-e continuous archiving to cloud storage. (default: False)

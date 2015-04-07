@@ -82,6 +82,9 @@ def pg_get_configuration():
 	# Get the replication user password.
 	value = os.getenv('PG_REPLICATION_USER_PASSWORD', 'bettervoice')
 	configuration.update({ 'replication_user_password': value })
+	# Get the wal-e enabled flag.
+	value = os.getenv('PG_WAL_E_ENABLED', 'False')
+	configuration.update({ 'wale_enabled': value == 'True' })
 	return configuration
 
 def pg_change_data_directory(directory):
