@@ -189,6 +189,16 @@ checkpoint_segments = {{ checkpoint_segments }}		# in logfile segments, min 1, 1
 
 # - Archiving -
 
+{% if wale_enabled %}
+archive_mode = on		# allows archiving to be done
+				# (change requires restart)
+archive_command = 'wal-e wal-push %p'		# command to use to archive a logfile segment
+				# placeholders: %p = path of file to archive
+				#               %f = file name only
+				# e.g. 'test ! -f /mnt/server/archivedir/%f && cp %p /mnt/server/archivedir/%f'
+archive_timeout = 60		# force a logfile segment switch after this
+				# number of seconds; 0 disables
+{% else %}
 #archive_mode = off		# allows archiving to be done
 				# (change requires restart)
 #archive_command = ''		# command to use to archive a logfile segment
@@ -197,7 +207,7 @@ checkpoint_segments = {{ checkpoint_segments }}		# in logfile segments, min 1, 1
 				# e.g. 'test ! -f /mnt/server/archivedir/%f && cp %p /mnt/server/archivedir/%f'
 #archive_timeout = 0		# force a logfile segment switch after this
 				# number of seconds; 0 disables
-
+{% endif %}
 
 #------------------------------------------------------------------------------
 # REPLICATION
