@@ -87,12 +87,15 @@ def pg_get_configuration():
 	configuration.update({ 'wale_enabled': value == 'True' })
 	return configuration
 
-def pg_change_data_directory(directory):
+def pg_base_backup(data_directory):
+	run('wal-e', 'backup-push', data_directory)
+
+def pg_change_data_directory(data_directory):
 	run('pg_dropcluster', '--stop', '9.3', 'main')
-	run('pg_createcluster', '-d', directory, '9.3', 'main')
+	run('pg_createcluster', '-d', data_directory, '9.3', 'main')
 	uid = pwd.getpwnam("postgres").pw_uid
 	gid = grp.getgrnam("postgres").gr_gid
-	chown(directory, uid, gid)
+	chown(data_directory, uid, gid)
 
 def pg_create_replication_user(user, password):
 	pg_run_query('CREATE USER ' + user + ' REPLICATION LOGIN ENCRYPTED PASSWORD \'' + password + '\';')
@@ -108,7 +111,7 @@ def pg_sync(host, data_directory, user):
 	run('pg_basebackup', '-h', host, '-D', data_directory, '-U', 'postgres', '-v', '-x')
 	uid = pwd.getpwnam("postgres").pw_uid
 	gid = grp.getgrnam("postgres").gr_gid
-	chown(directory, uid, gid)
+	chown(data_directory, uid, gid)
 
 def pg_set_password(password):
 	pg_run_query('alter user postgres with password \'' + password + '\';', 'postgres')
@@ -154,8 +157,11 @@ if __name__ == "__main__":
 	if configuration['deployment_type'] == 'replicated':
 		pg_create_replication_user(configuration['replication_user'],
 															 configuration['replication_user_password'])
-		# Start the heartbeat.
-		if configuration['role'] == 'slave':
+		if configuration['role'] == 'master':
+			if configuration['wale_enabled']:
+				pg_base_backup(configuration['data_directory'])
+		elif configuration['role'] == 'slave':
+			# Start the heartbeat.
 			heartbeat = templates.get_template('heartbeat.template') \
 													 .render(configuration)
 			write(heartbeat, '/usr/bin/heartbeat')
