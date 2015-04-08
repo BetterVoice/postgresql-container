@@ -95,7 +95,7 @@ def pg_base_backup(data_directory):
 def pg_change_data_directory(data_directory):
 	run('pg_dropcluster', '--stop', '9.3', 'main')
 	run('pg_createcluster', '-d', data_directory, '9.3', 'main')
-	chown(data_directory, "postgres", "postgres")
+	chown(data_directory, 'postgres', 'postgres')
 
 def pg_create_replication_user(user, password):
 	pg_run_query('CREATE USER ' + user + ' REPLICATION LOGIN ENCRYPTED PASSWORD \'' + password + '\';')
@@ -109,7 +109,7 @@ def pg_run_query(query, database = None):
 def pg_sync(host, data_directory, user):
 	empty(data_directory)
 	run('pg_basebackup', '-h', host, '-D', data_directory, '-U', 'postgres', '-v', '-x')
-	chown(data_directory, "postgres", "postgres")
+	chown(data_directory, 'postgres', 'postgres')
 
 def pg_set_password(password):
 	pg_run_query('alter user postgres with password \'' + password + '\';', 'postgres')
@@ -148,7 +148,7 @@ if __name__ == "__main__":
 		recovery = templates.get_template('recovery.conf.template') \
 												.render(configuration)
 		write(recovery, configuration['data_directory'] + '/recovery.conf')
-		chown(configuration['data_directory'] + '/recovery.conf', "postgres", "postgres")
+		chown(configuration['data_directory'] + '/recovery.conf', 'postgres', 'postgres')
 	# Start the container.
 	start('postgresql')
 	# Set the default password.
