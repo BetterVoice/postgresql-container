@@ -15,15 +15,15 @@ To run a standalone container with wal-e support.
 
 To run a replicated container.
 
-```sudo docker run --name postgresql-master -e PG_DEPLOYMENT_TYPE=replicated -e PG_ROLE=master -e PG_WAL_LEVEL=hot_standby -p 5432:5432/tcp -t -i bettervoice/postgresql:9.3```
+```sudo docker run --name postgresql-master -e PG_DEPLOYMENT_TYPE=replicated -e PG_ROLE=master -e PG_WAL_LEVEL=hot_standby -p 5432:5432/tcp bettervoice/postgresql:9.3```
 
-```sudo docker run --name postgresql-slave -e PG_DEPLOYMENT_TYPE=replicated -e PG_ROLE=slave -e PG_WAL_LEVEL=hot_standby -e PG_MASTER_HOST=IPAddress -p 5432:5432/tcp -t -i bettervoice/postgresql:9.3```
+```sudo docker run --name postgresql-slave -e PG_DEPLOYMENT_TYPE=replicated -e PG_ROLE=slave -e PG_WAL_LEVEL=hot_standby -e PG_MASTER_HOST=IPAddress -p 5432:5432/tcp bettervoice/postgresql:9.3```
 
 To run a replicated container with wal-e support.
 
-```sudo docker run --name postgresql-master -e PG_DEPLOYMENT_TYPE=replicated -e PG_ROLE=master -e PG_WAL_LEVEL=hot_standby -e PG_WAL_E_ENABLED=True -e AWS_ACCESS_KEY_ID=AWSAccessKeyId -e AWS_SECRET_ACCESS_KEY=AWSSecretKey -e WALE_S3_PREFIX=s3://bucket -p 5432:5432/tcp -t -i bettervoice/postgresql:9.3```
+```sudo docker run --name postgresql-master -e PG_DEPLOYMENT_TYPE=replicated -e PG_ROLE=master -e PG_WAL_LEVEL=hot_standby -e PG_WAL_E_ENABLED=True -e AWS_ACCESS_KEY_ID=AWSAccessKeyId -e AWS_SECRET_ACCESS_KEY=AWSSecretKey -e WALE_S3_PREFIX=s3://bucket -p 5432:5432/tcp bettervoice/postgresql:9.3```
 
-```sudo docker run --name postgresql-slave -e PG_DEPLOYMENT_TYPE=replicated -e PG_ROLE=slave -e PG_WAL_LEVEL=hot_standby -e PG_MASTER_HOST=IPAddress -p 5432:5432/tcp -t -i bettervoice/postgresql:9.3```
+```sudo docker run --name postgresql-slave -e PG_DEPLOYMENT_TYPE=replicated -e PG_ROLE=slave -e PG_WAL_LEVEL=hot_standby -e PG_MASTER_HOST=IPAddress -p 5432:5432/tcp bettervoice/postgresql:9.3```
 
 ### Deployment Environment Variables
 
