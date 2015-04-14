@@ -167,8 +167,8 @@ if __name__ == "__main__":
 	# Start the container.
 	start('postgresql')
 	# Set the default password.
-	if configuration['deployment_type'] = 'standalone' or \
-	   configuration['deployment_type'] = 'replicated' and \
+	if configuration['deployment_type'] == 'standalone' or \
+	   configuration['deployment_type'] == 'replicated' and \
 	   configuration['role'] == 'master':
 		pg_set_password(configuration['password'])
 	# Post startup initialization.
