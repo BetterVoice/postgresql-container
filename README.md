@@ -39,9 +39,9 @@ To run a standalone container with all the default settings.
 
 **PG_MASTER_HOST** - The IP address or host name for the master. (default: None)
 
-**PG_REPLICATION_USER** - The user name used by the slave for replication. (default: replicator)
+**PG_MASTER_HOST_PORT** - The port number for the master. (default: 5432)
 
-**PG_REPLICATION_USER_PASSWORD** - The password for the replication user. (default: bettervoice)
+**PG_SLAVES** - The addresses of the slaves. (default: 0.0.0.0/0)
 
 ### WAL-E Environment Variables
 

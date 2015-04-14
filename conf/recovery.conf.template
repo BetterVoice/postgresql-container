@@ -1,3 +1,3 @@
-primary_conninfo = 'host={{ master_host }} port={{ port }} user={{ replication_user }} password={{ replication_user_password }}'
+primary_conninfo = 'host={{ master_host }} port={{ master_host_port }} user=postgres password={{ password }}'
 trigger_file = '{{ data_directory }}/failover'
 standby_mode = 'on'

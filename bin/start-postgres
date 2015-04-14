@@ -78,12 +78,12 @@ def pg_get_configuration():
 	# Get the master host for replication.
 	value = os.getenv('PG_MASTER_HOST', None)
 	configuration.update({ 'master_host': value })
-	# Get the user name for replication.
-	value = os.getenv('PG_REPLICATION_USER', 'replicator')
-	configuration.update({ 'replication_user': value })
-	# Get the replication user password.
-	value = os.getenv('PG_REPLICATION_USER_PASSWORD', 'bettervoice')
-	configuration.update({ 'replication_user_password': value })
+	# Get the master host for replication.
+	value = os.getenv('PG_MASTER_HOST_PORT', 5432)
+	configuration.update({ 'master_host_port': value })
+	# Get the IP addresses for slaves.
+	value = os.getenv('PG_SLAVES', '0.0.0.0/0').split(',')
+	configuration.update({ 'slaves': value })
 	# Get the wal-e enabled flag.
 	value = os.getenv('PG_WAL_E_ENABLED', 'False')
 	configuration.update({ 'wale_enabled': value == 'True' })
@@ -106,9 +106,6 @@ def pg_change_data_directory(data_directory):
 	run('pg_createcluster', '-d', data_directory, '9.3', 'main')
 	chown(data_directory, 'postgres', 'postgres')
 
-def pg_create_replication_user(user, password):
-	pg_run_query('CREATE USER ' + user + ' REPLICATION LOGIN ENCRYPTED PASSWORD \'' + password + '\';')
-
 def pg_run_query(query, database = None):
 	if database:
 		run('sudo', '-u', 'postgres', 'psql', '-U', 'postgres', '-d', database, '-c', query)
@@ -121,7 +118,7 @@ def pg_sync(host, data_directory):
 	chown(data_directory, 'postgres', 'postgres')
 
 def pg_set_password(password):
-	pg_run_query('alter user postgres with password \'' + password + '\';', 'postgres')
+	pg_run_query('alter user postgres with password \'' + password + '\';', database = 'postgres')
 
 def run(app, *args):
 	check_call([app] + list(args))
@@ -170,11 +167,12 @@ if __name__ == "__main__":
 	# Start the container.
 	start('postgresql')
 	# Set the default password.
-	pg_set_password(configuration['password'])
-	# Create the replicator user.
+	if configuration['deployment_type'] = 'standalone' or \
+	   configuration['deployment_type'] = 'replicated' and \
+	   configuration['role'] == 'master':
+		pg_set_password(configuration['password'])
+	# Post startup initialization.
 	if configuration['deployment_type'] == 'replicated':
-		pg_create_replication_user(configuration['replication_user'],
-															 configuration['replication_user_password'])
 		if configuration['role'] == 'master':
 			if configuration['wale_enabled']:
 				wale_init(configuration)
