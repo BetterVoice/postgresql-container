@@ -65,4 +65,6 @@ To run a replicated container with wal-e support.
 
 This is not meant to be in depth documentation for wal-e which is a continuous archiving framework for postgresql so we highly recommend that you visit the github repo located at [https://github.com/wal-e/wal-e](https://github.com/wal-e/wal-e). In order to configure wal-e provide the necessary environment variables and enable it with the flag below.
 
+*AWS is the only backend currently supported when using wal-e*
+
 **PG_WAL_E_ENABLED** - A flag to enable wal-e continuous archiving to cloud storage. (default: False)
