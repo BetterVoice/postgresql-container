@@ -84,6 +84,9 @@ def pg_get_configuration():
 	# Get the IP addresses for slaves.
 	value = os.getenv('PG_SLAVES', '0.0.0.0/0').split(',')
 	configuration.update({ 'slaves': value })
+	# Get the slave heartbeat interval.
+	value = os.getenv('HEARTBEAT_INTERVAL', 5)
+	configuration.update({ 'hearbeat_interval': value })
 	# Get the wal-e enabled flag.
 	value = os.getenv('PG_WAL_E_ENABLED', 'False')
 	configuration.update({ 'wale_enabled': value == 'True' })
@@ -172,16 +175,18 @@ if __name__ == "__main__":
 	   configuration['role'] == 'master':
 		pg_set_password(configuration['password'])
 	# Post startup initialization.
-	if configuration['deployment_type'] == 'replicated':
-		if configuration['role'] == 'master':
-			if configuration['wale_enabled']:
-				wale_init(configuration)
-				pg_base_backup(configuration['data_directory'])
-		elif configuration['role'] == 'slave':
-			heartbeat = templates.get_template('heartbeat.template') \
-													 .render(configuration)
-			write(heartbeat, '/usr/bin/heartbeat')
-			chmod('/usr/bin/heartbeat', 0755)
-			run('heartbeat')
+	if configuration['wale_enabled']:
+		wale_init(configuration)
+		pg_base_backup(configuration['data_directory'])
+	if configuration['deployment_type'] == 'replicated' and \
+		 configuration['role'] == 'slave':
+		heartbeat = templates.get_template('heartbeat.template') \
+												 .render(configuration)
+		write(heartbeat, '/usr/bin/heartbeat')
+		chmod('/usr/bin/heartbeat', 0755)
+		run('heartbeat')
 	# Print the log to stdout.
-	run('tail', '-F', '/var/log/postgresql/postgresql-9.3-main.log')
+	try:
+		run('tail', '-F', '/var/log/postgresql/postgresql-9.3-main.log')
+	except KeyboardInterrupt:
+		print 'Exiting...'

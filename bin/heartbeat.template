@@ -1,10 +1,19 @@
 #!/usr/bin/python
 
 from subprocess import CalledProcessError, check_call
-import os
 
-try:
-	check_call(['ping', '-c', '3', '-W', '1', '{{ master_host }}'])
-except CalledProcessError as error:
-	with open('{{ data_directory }}/failover', 'a'):
-		os.utime('{{ data_directory }}/failover', None)
+import os
+import time
+
+def monitor():
+	while True:
+		try:
+			check_call(['ping', '-c', '3', '-W', '1', '{{ master_host }}'])
+		except CalledProcessError as error:
+			with open('{{ data_directory }}/failover', 'a'):
+				os.utime('{{ data_directory }}/failover', None)
+			break
+		time.sleep({{ hearbeat_interval }})
+
+if __name__ == "__main__":
+	monitor()

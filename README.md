@@ -43,6 +43,8 @@ To run a standalone container with all the default settings.
 
 **PG_SLAVES** - The addresses of the slaves. (default: 0.0.0.0/0)
 
+**HEARTBEAT_INTERVAL** - The interval in seconds for the hearbeat between the master and slave. (default: 5)
+
 ### WAL-E Environment Variables
 
 This is not meant to be in depth documentation for wal-e which is a continuous archiving framework for postgresql so we highly recommend that you visit the github repo located at [https://github.com/wal-e/wal-e](https://github.com/wal-e/wal-e). In order to configure wal-e provide the necessary environment variables and enable it with the flag below.
