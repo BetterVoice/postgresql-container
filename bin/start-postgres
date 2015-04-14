@@ -115,7 +115,7 @@ def pg_run_query(query, database = None):
 	else:
 		run('sudo', '-u', 'postgres', 'psql', '-U', 'postgres', '-c', query)
 
-def pg_sync(host, data_directory, user):
+def pg_sync(host, data_directory):
 	empty(data_directory)
 	run('pg_basebackup', '-h', host, '-D', data_directory, '-U', 'postgres', '-v', '-x')
 	chown(data_directory, 'postgres', 'postgres')
