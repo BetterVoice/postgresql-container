@@ -16,5 +16,8 @@ ADD conf/postgresql.conf.template /usr/share/postgresql/9.3/postgresql.conf.temp
 ADD conf/pg_hba.conf.template /usr/share/postgresql/9.3/pg_hba.conf.template
 ADD conf/recovery.conf.template /usr/share/postgresql/9.3/recovery.conf.template
 
+# Open the container up to the world.
+EXPOSE 5432/tcp
+
 # Start PostgreSQL.
 CMD start-postgres
