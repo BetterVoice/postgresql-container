@@ -39,6 +39,9 @@ def empty(directory):
 
 def pg_get_configuration():
 	configuration = { }
+	# Get the initialization flag.
+	value = os.getenv('PG_INIT', 'True')
+	configuration.update({ 'initialize': value == 'True' })
 	# Get the deployment type.
 	value = os.getenv('PG_DEPLOYMENT_TYPE', 'standalone')
 	configuration.update({ 'deployment_type': value })
@@ -148,43 +151,49 @@ if __name__ == "__main__":
 	templates = Environment(loader = loader)
 	# Load the configuration into a dictionary.
 	configuration = pg_get_configuration()
-	# Initialize the data directory.
-	pg_change_data_directory(configuration['data_directory'])
-	# Configure the slave.
-	if configuration['deployment_type'] == 'replicated' and \
-		 configuration['role'] == 'slave':
-		# Copy data from the master and create the recovery file.
-		pg_sync(configuration['master_host'], configuration['data_directory'])
-		recovery = templates.get_template('recovery.conf.template') \
-												.render(configuration)
-		write(recovery, configuration['data_directory'] + '/recovery.conf')
-		chown(configuration['data_directory'] + '/recovery.conf', 'postgres', 'postgres')
-	# Write pg_hba.conf
-	pg_hba = templates.get_template('pg_hba.conf.template') \
-										.render(configuration)
-	write(pg_hba, '/etc/postgresql/9.3/main/pg_hba.conf')
-	# Write postgresql.conf
-	postgresql = templates.get_template('postgresql.conf.template') \
-												.render(configuration)
-	write(postgresql, '/etc/postgresql/9.3/main/postgresql.conf')
-	# Start the container.
-	start('postgresql')
-	# Set the default password.
-	if configuration['deployment_type'] == 'standalone' or \
-	   configuration['deployment_type'] == 'replicated' and \
-	   configuration['role'] == 'master':
-		pg_set_password(configuration['password'])
-	# Post startup initialization.
-	if configuration['wale_enabled']:
-		wale_init(configuration)
-		pg_base_backup(configuration['data_directory'])
-	if configuration['deployment_type'] == 'replicated' and \
-		 configuration['role'] == 'slave':
-		heartbeat = templates.get_template('heartbeat.template') \
-												 .render(configuration)
-		write(heartbeat, '/usr/bin/heartbeat')
-		chmod('/usr/bin/heartbeat', 0755)
-		run('heartbeat')
+	if not configuration['initialize']:
+		start('postgresql')
+		if configuration['deployment_type'] == 'replicated' and \
+			 configuration['role'] == 'slave':
+			run('heartbeat')
+	else:
+		# Initialize the data directory.
+		pg_change_data_directory(configuration['data_directory'])
+		# Configure the slave.
+		if configuration['deployment_type'] == 'replicated' and \
+			 configuration['role'] == 'slave':
+			# Copy data from the master and create the recovery file.
+			pg_sync(configuration['master_host'], configuration['data_directory'])
+			recovery = templates.get_template('recovery.conf.template') \
+													.render(configuration)
+			write(recovery, configuration['data_directory'] + '/recovery.conf')
+			chown(configuration['data_directory'] + '/recovery.conf', 'postgres', 'postgres')
+		# Write pg_hba.conf
+		pg_hba = templates.get_template('pg_hba.conf.template') \
+											.render(configuration)
+		write(pg_hba, '/etc/postgresql/9.3/main/pg_hba.conf')
+		# Write postgresql.conf
+		postgresql = templates.get_template('postgresql.conf.template') \
+													.render(configuration)
+		write(postgresql, '/etc/postgresql/9.3/main/postgresql.conf')
+		# Start the container.
+		start('postgresql')
+		# Set the default password.
+		if configuration['deployment_type'] == 'standalone' or \
+		   configuration['deployment_type'] == 'replicated' and \
+		   configuration['role'] == 'master':
+			pg_set_password(configuration['password'])
+		# Post startup initialization.
+		if configuration['wale_enabled']:
+			wale_init(configuration)
+			pg_base_backup(configuration['data_directory'])
+		if configuration['deployment_type'] == 'replicated' and \
+			 configuration['role'] == 'slave':
+			heartbeat = templates.get_template('heartbeat.template') \
+													 .render(configuration)
+			write(heartbeat, '/usr/bin/heartbeat')
+			chmod('/usr/bin/heartbeat', 0755)
+			run('heartbeat')
 	# Print the log to stdout.
 	try:
 		run('tail', '-F', '/var/log/postgresql/postgresql-9.3-main.log')

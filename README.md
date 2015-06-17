@@ -35,6 +35,10 @@ To run a replicated container with wal-e support.
 
 ### Database Configuration Environment Variables
 
+**PG_INIT** - A flag to enable or disable container intialization. (default: True)
+
+**WARNING**: *If this flag is set to True all data will be lost and the container will be re-initialized.*
+
 **PG_ALLOWED_ADDRESSES** - A comma separated list of IP addresses allowed to connect to the database. They can be a host name, made up of an IP address and a CIDR mask that is an integer (between 0 and 32 (IPv4) or 128 (IPv6) inclusive) that specifies the number of significant bits in the mask. Instead of a CIDR-address, you can write "samehost" to match any of the server's own IP addresses, or "samenet" to match any address in any subnet that the server is directly connected to. (default: 0.0.0.0/0)
 
 **PG_MAX_CONNECTIONS** - The maximum number of supported connections to the database. (default: 100)
