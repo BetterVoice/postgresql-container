@@ -5,6 +5,8 @@ MAINTAINER Thomas Quintana <thomas@bettervoice.com>
 
 # Install.
 RUN apt-get update && apt-get install -y daemontools libffi-dev libssl-dev lzop postgresql-9.3 postgresql-client-9.3 postgresql-contrib-9.3 postgresql-9.3-pgpool2 postgresql-9.3-postgis-2.1 pv python python-dev python-pip
+ADD bin/get-pip.py /usr/local/bin/get-pip.py
+RUN python /usr/local/bin/get-pip.py
 RUN pip install --upgrade six
 RUN pip install Jinja2 wal-e
 
