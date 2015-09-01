@@ -87,9 +87,9 @@ def pg_get_configuration():
 	# Get the IP addresses for slaves.
 	value = os.getenv('PG_SLAVES', '0.0.0.0/0').split(',')
 	configuration.update({ 'slaves': value })
-	# Get the slave heartbeat interval.
-	value = os.getenv('HEARTBEAT_INTERVAL', 5)
-	configuration.update({ 'hearbeat_interval': value })
+	# Get the slave heartbeat flag.
+	value = os.getenv('HEARTBEAT_ENABLED', 'True')
+	configuration.update({ 'heartbeat_enabled': value == 'True' })
 	# Get the wal-e enabled flag.
 	value = os.getenv('PG_WAL_E_ENABLED', 'False')
 	configuration.update({ 'wale_enabled': value == 'True' })
@@ -154,7 +154,8 @@ if __name__ == "__main__":
 	if not configuration['initialize']:
 		start('postgresql')
 		if configuration['deployment_type'] == 'replicated' and \
-			 configuration['role'] == 'slave':
+			 configuration['role'] == 'slave' and \
+			 configuration['heartbeat_enabled']:
 			run('heartbeat')
 	else:
 		# Initialize the data directory.
@@ -193,7 +194,8 @@ if __name__ == "__main__":
 													 .render(configuration)
 			write(heartbeat, '/usr/bin/heartbeat')
 			chmod('/usr/bin/heartbeat', 0755)
-			run('heartbeat')
+			if configuration['heartbeat_enabled']:
+				run('heartbeat')
 	# Print the log to stdout.
 	try:
 		run('tail', '-F', '/var/log/postgresql/postgresql-9.3-main.log')

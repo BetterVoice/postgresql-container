@@ -63,7 +63,7 @@ To run a replicated container with wal-e support.
 
 **PG_SLAVES** - The addresses of the slaves. (default: 0.0.0.0/0)
 
-**HEARTBEAT_INTERVAL** - The interval in seconds for the hearbeat between the master and slave. (default: 5)
+**HEARTBEAT_ENABLED** - A flag to enable a heartbeat on the slave node. (default: True)
 
 ### WAL-E Environment Variables
 
