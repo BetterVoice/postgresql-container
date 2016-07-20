@@ -55,7 +55,7 @@ def pg_get_configuration():
 	value = os.getenv('PG_ALLOWED_ADDRESSES', '0.0.0.0/0').split(',')
 	configuration.update({ 'allowed_addresses': value })
 	# Get the database data directory.
-	value = os.getenv('PG_DATA_DIRECTORY', '/var/lib/postgresql/9.3/main')
+	value = os.getenv('PG_DATA_DIRECTORY', '/var/lib/postgresql/9.5/main')
 	configuration.update({ 'data_directory': value })
 	# Get the maximum number of connections allowed to the db.
 	value = os.getenv('PG_MAX_CONNECTIONS', 100)
@@ -69,9 +69,6 @@ def pg_get_configuration():
 	# Get the database write ahead log level.
 	value = os.getenv('PG_WAL_LEVEL', 'minimal')
 	configuration.update({ 'wal_level': value })
-	# Get the number of database checkpoint segments.
-	value = os.getenv('PG_CHECKPOINT_SEGMENTS', 32)
-	configuration.update({ 'checkpoint_segments': value })
 	# Get the number of write ahead log senders.
 	value = os.getenv('PG_MAX_WAL_SENDERS', 3)
 	configuration.update({ 'max_wal_senders': value })
@@ -87,29 +84,11 @@ def pg_get_configuration():
 	# Get the IP addresses for slaves.
 	value = os.getenv('PG_SLAVES', '0.0.0.0/0').split(',')
 	configuration.update({ 'slaves': value })
-	# Get the slave heartbeat flag.
-	value = os.getenv('HEARTBEAT_ENABLED', 'True')
-	configuration.update({ 'heartbeat_enabled': value == 'True' })
-	# Get the wal-e enabled flag.
-	value = os.getenv('PG_WAL_E_ENABLED', 'False')
-	configuration.update({ 'wale_enabled': value == 'True' })
-	# Get the AWS secret key.
-	value = os.getenv('AWS_SECRET_ACCESS_KEY', None)
-	configuration.update({ 'aws_secret_access_key': value })
-	# Get the AWS access key.
-	value = os.getenv('AWS_ACCESS_KEY_ID', None)
-	configuration.update({ 'aws_access_key_id': value })
-	# Get the wal-e S3 prefix.
-	value = os.getenv('WALE_S3_PREFIX', None)
-	configuration.update({ 'wale_s3_prefix': value })
 	return configuration
 
-def pg_base_backup(data_directory):
-	run('sudo', '-u', 'postgres', 'envdir', '/etc/wal-e.d/env', 'wal-e', 'backup-push', data_directory)
-
 def pg_change_data_directory(data_directory):
-	run('pg_dropcluster', '--stop', '9.3', 'main')
-	run('pg_createcluster', '-d', data_directory, '9.3', 'main')
+	run('pg_dropcluster', '--stop', '9.5', 'main')
+	run('pg_createcluster', '-d', data_directory, '9.5', 'main')
 	chown(data_directory, 'postgres', 'postgres')
 
 def pg_run_query(query, database = None):
@@ -132,22 +111,13 @@ def run(app, *args):
 def start(service):
 	check_call(['service', service, 'start'])
 
-def wale_init(configuration):
-	wale_configuration_dir = '/etc/wal-e.d/env'
-	if not os.path.exists(wale_configuration_dir):
-		os.makedirs(wale_configuration_dir)
-	write(configuration['aws_secret_access_key'], wale_configuration_dir + '/AWS_SECRET_ACCESS_KEY')
-	write(configuration['aws_access_key_id'], wale_configuration_dir + '/AWS_ACCESS_KEY_ID')
-	write(configuration['wale_s3_prefix'], wale_configuration_dir + '/WALE_S3_PREFIX')
-	chown(wale_configuration_dir, 'root', 'postgres')
-
 def write(template, path):
 	with open(path, "wb") as output:
 		output.write(template)
 
 if __name__ == "__main__":
 	# Initialize Jinja2
-	loader = FileSystemLoader('/usr/share/postgresql/9.3')
+	loader = FileSystemLoader('/usr/share/postgresql/9.5')
 	templates = Environment(loader = loader)
 	# Load the configuration into a dictionary.
 	configuration = pg_get_configuration()
@@ -172,11 +142,11 @@ if __name__ == "__main__":
 		# Write pg_hba.conf
 		pg_hba = templates.get_template('pg_hba.conf.template') \
 											.render(configuration)
-		write(pg_hba, '/etc/postgresql/9.3/main/pg_hba.conf')
+		write(pg_hba, '/etc/postgresql/9.5/main/pg_hba.conf')
 		# Write postgresql.conf
 		postgresql = templates.get_template('postgresql.conf.template') \
 													.render(configuration)
-		write(postgresql, '/etc/postgresql/9.3/main/postgresql.conf')
+		write(postgresql, '/etc/postgresql/9.5/main/postgresql.conf')
 		# Start the container.
 		start('postgresql')
 		# Set the default password.
@@ -185,9 +155,6 @@ if __name__ == "__main__":
 		   configuration['role'] == 'master':
 			pg_set_password(configuration['password'])
 		# Post startup initialization.
-		if configuration['wale_enabled']:
-			wale_init(configuration)
-			pg_base_backup(configuration['data_directory'])
 		if configuration['deployment_type'] == 'replicated' and \
 			 configuration['role'] == 'slave':
 			heartbeat = templates.get_template('heartbeat.template') \
@@ -198,6 +165,6 @@ if __name__ == "__main__":
 				run('heartbeat')
 	# Print the log to stdout.
 	try:
-		run('tail', '-F', '/var/log/postgresql/postgresql-9.3-main.log')
+		run('tail', '-F', '/var/log/postgresql/postgresql-9.5-main.log')
 	except KeyboardInterrupt:
 		print 'Exiting...'
