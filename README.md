@@ -7,13 +7,13 @@ This project can be used to deploy a PostgreSQL server inside a Docker container
 
 To run a standalone container with all the default settings.
 
-```sudo docker run --name pgsql -p 5432:5432/tcp inteliquent/postgresql:latest```
+```sudo docker run --name pgsql -p 5432:5432/tcp inteliquent/postgresql:9.5```
 
 To run a replicated container.
 
-```sudo docker run --name pgsql-master -e PG_DEPLOYMENT_TYPE=replicated -e PG_ROLE=master -e PG_WAL_LEVEL=hot_standby -p 5432:5432/tcp inteliquent/postgresql:latest```
+```sudo docker run --name pgsql-master -e PG_DEPLOYMENT_TYPE=replicated -e PG_ROLE=master -e PG_WAL_LEVEL=hot_standby -p 5432:5432/tcp inteliquent/postgresql:9.5```
 
-```sudo docker run --name pgsql-slave -e PG_DEPLOYMENT_TYPE=replicated -e PG_ROLE=slave -e PG_WAL_LEVEL=hot_standby -e PG_MASTER_HOST=IPAddress -p 5432:5432/tcp inteliquent/postgresql:latest```
+```sudo docker run --name pgsql-slave -e PG_DEPLOYMENT_TYPE=replicated -e PG_ROLE=slave -e PG_WAL_LEVEL=hot_standby -e PG_MASTER_HOST=IPAddress -p 5432:5432/tcp inteliquent/postgresql:9.5```
 
 ### Deployment Environment Variables
 

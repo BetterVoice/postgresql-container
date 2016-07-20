@@ -172,7 +172,7 @@ dynamic_shared_memory_type = posix	# the default is the first option
 
 # - Settings -
 
-#wal_level = {{wal_level}}			# minimal, archive, hot_standby, or logical
+wal_level = {{wal_level}}			# minimal, archive, hot_standby, or logical
 					# (change requires restart)
 #fsync = on				# turns forced synchronization on or off
 #synchronous_commit = on		# synchronization level;
