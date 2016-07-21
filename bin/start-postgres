@@ -154,15 +154,6 @@ if __name__ == "__main__":
 		   configuration['deployment_type'] == 'replicated' and \
 		   configuration['role'] == 'master':
 			pg_set_password(configuration['password'])
-		# Post startup initialization.
-		if configuration['deployment_type'] == 'replicated' and \
-			 configuration['role'] == 'slave':
-			heartbeat = templates.get_template('heartbeat.template') \
-													 .render(configuration)
-			write(heartbeat, '/usr/bin/heartbeat')
-			chmod('/usr/bin/heartbeat', 0755)
-			if configuration['heartbeat_enabled']:
-				run('heartbeat')
 	# Print the log to stdout.
 	try:
 		run('tail', '-F', '/var/log/postgresql/postgresql-9.5-main.log')
