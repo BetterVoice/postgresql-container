@@ -59,7 +59,9 @@ while :; do
   shift
 done
 
-if [ -n "$data_dir" ] && [ -n "$master_address" ] && [ -n "$master_port" ]; then
+if [ -n "$data_dir" ] && \
+   [ -n "$master_address" ] && \
+   [ -n "$master_port" ]; then
   pgsql_sync_slave $data_dir $master_address $master_port
 else
   pgsql_show_help
