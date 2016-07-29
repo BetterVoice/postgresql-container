@@ -46,7 +46,7 @@ CMD /bin/bash -c " \
   if [ -z ${PGSQL_INIT+x} ];then \
     service postgresql start; \
     tail -f /var/log/postgresql/postgresql-9.4-main.log; \
-    exit 0
+    exit 0; \
   fi; \
   PGSQL_INIT=`echo $PGSQL_INIT | awk '{print tolower($0)}'`; \
   if [ $PGSQL_INIT=true ];then \
