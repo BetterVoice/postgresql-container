@@ -1,0 +1,6 @@
+/var/log/postgresql/postgresql-9.4-main.log {
+  monthly
+  missingok
+  notifempty
+  create 0755 postgres postgres 
+}

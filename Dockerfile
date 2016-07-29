@@ -38,6 +38,10 @@ ADD templates/postgresql/postgresql.conf.template /usr/share/postgresql/9.4/post
 ADD templates/postgresql/pg_hba.conf.template /usr/share/postgresql/9.4/pg_hba.conf.template
 ADD templates/postgresql/recovery.conf.template /usr/share/postgresql/9.4/recovery.conf.template
 
+# Add the logrotate configuration.
+ADD templates/logrotate/logrotate.conf /etc/logrotate.conf
+ADD templates/logrotate/postgresql /etc/logrotate.d/postgresql
+
 # Open the container up to the world.
 EXPOSE 5432/tcp
 
