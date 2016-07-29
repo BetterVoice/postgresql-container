@@ -1,0 +1,66 @@
+#!/bin/bash
+
+pgsql_show_help() {
+  echo "This script synchronizes a PostgreSQL slave with a PostgreSQL Master."
+  echo ""
+  echo "Usage: pgsql_sync_slave -d /tmp -h 127.0.0.1 -p 5432"
+  echo ""
+  echo "-d, --data-directory         The path to the data directory."
+  echo "-h, --master-address         The address to the master host."
+  echo "-p, --master-port            The port the master host is listening on."
+}
+
+pgsql_sync_slave() {
+  rm -rf "$1/*"
+  pg_basebackup -h $2 -p $3 -D $1 -U postgres -v -x
+  chown -R postgres:postgres $1
+}
+
+data_dir="/var/lib/postgresql/9.4/main"
+master_address=
+master_port="5432"
+while :; do
+  case $1 in
+    -\?|--help)
+      pgsql_show_help
+      exit
+      ;;
+    -d|--data-directory)
+      if [ -n "$2" ]; then
+          data_dir="$2"
+          shift
+      fi
+      ;;
+    -h|--master-address)
+      if [ -n "$2" ]; then
+          master_address="$2"
+          shift
+      else
+          printf 'ERROR: "--master-address" requires a valid address.\n' >&2
+          exit 1
+      fi
+      ;;
+    -p|--master-port)
+      if [ -n "$2" ]; then
+          master_port="$2"
+      fi
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -?*)
+      printf 'WARN: Unknown option (ignored): %s\n' "$1" >&2
+      ;;
+    *)
+      break
+  esac
+  shift
+done
+
+if [ -n "$data_dir" ] && [ -n "$master_address" ] && [ -n "$master_port" ]; then
+  pgsql_sync_slave $data_dir $master_address $master_port
+else
+  pgsql_show_help
+fi

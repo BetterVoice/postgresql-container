@@ -1,0 +1,3 @@
+primary_conninfo = 'host={{pgsql_master_address}} port={{pgsql_master_port}} user=postgres password={{pgsql_password}}'
+trigger_file = '{{pgsql_data_dir}}/failover'
+standby_mode = 'on'

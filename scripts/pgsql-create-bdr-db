@@ -1,0 +1,15 @@
+#!/bin/bash
+
+pgsql_show_help() {
+  
+}
+
+pgsql_create_bdr_db() {
+  
+}
+
+if [ $# -eq 1 ]; then
+  pgsql_create_bdr_db $1
+else
+  pgsql_show_help
+fi

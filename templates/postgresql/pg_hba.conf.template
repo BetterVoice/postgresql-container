@@ -97,11 +97,11 @@ host    all             all             ::1/128                 md5
 #local   replication     postgres                                peer
 #host    replication     postgres        127.0.0.1/32            md5
 #host    replication     postgres        ::1/128                 md5
-{% if deployment_type == 'replicated' %}
-{% for slave in slaves %}
+{% if pgsql_deployment_type == "replicated" %}
+{% for slave in pgsql_slaves.split(",") %}
 host    replication     postgres        {{ slave }}             trust
 {% endfor %}
 {% endif %}
-{% for address in allowed_addresses %}
+{% for address in pgsql_allowed_addresses.split(",") %}
 host    all             all             {{ address }}           md5
 {% endfor %}

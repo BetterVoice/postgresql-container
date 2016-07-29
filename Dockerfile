@@ -3,31 +3,91 @@
 FROM ubuntu:16.04
 MAINTAINER Thomas Quintana <tquintana@inteliquent.com>
 
-# Add the PostgreSQL latest stable release repository for Ubuntu.
+# Install an HTTP client.
 RUN apt-get update && apt-get install -y wget
+
+# Add the PostgreSQL release repositories for Ubuntu.
 RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-ADD repos/pgdg.list /etc/apt/sources.list.d/pgdg.list
+ADD repos/postgresql.list /etc/apt/sources.list.d/postgresql.list
 
-# Install PostgreSQL Dependencies.
-RUN apt-get update && apt-get install -y apt-utils daemontools libffi-dev libssl-dev logrotate lzop postgresql-9.5 postgresql-client-9.5 postgresql-contrib-9.5 postgresql-9.5-postgis-2.1 python python-dev python-pip sudo
+# Add the BDR release repositories for Ubuntu.
+RUN wget --quiet -O - http://packages.2ndquadrant.com/bdr/apt/AA7A6805.asc | apt-key add -
+ADD repos/2ndquadrant.list /etc/apt/sources.list.d/2ndquadrant.list
 
-# Install Python Dependencies
+# Install PostgreSQL + BDR Plugin.
+RUN apt-get update && apt-get install -y postgresql-bdr-9.4
+
+# Install Dependencies and Tools.
+RUN apt-get update && apt-get install -y cron logrotate python python-dev python-pip sudo vim
+
+# Install Python Tools.
 RUN pip install --upgrade pip
-RUN pip install Jinja2
+RUN pip install trt
 
-# Clean Up
+# Clean Up.
 RUN apt-get autoremove && apt-get autoclean
 
-# Post Install Configuration.
-ADD bin/start-postgres /usr/bin/start-postgres
-RUN chmod +x /usr/bin/start-postgres
+# Add the utility scripts to the conainer.
+ADD scripts/pgsql-change-dir /usr/bin/pgsql-change-dir
+ADD scripts/pgsql-sync-slave /usr/bin/pgsql-sync-slave
+RUN chmod +x /usr/bin/pgsql-change-dir /usr/bin/pgsql-sync-slave
 
-ADD conf/postgresql.conf.template /usr/share/postgresql/9.5/postgresql.conf.template
-ADD conf/pg_hba.conf.template /usr/share/postgresql/9.5/pg_hba.conf.template
-ADD conf/recovery.conf.template /usr/share/postgresql/9.5/recovery.conf.template
+# Add the PostgreSQL templates to the container.
+ADD templates/postgresql/postgresql.conf.template /usr/share/postgresql/9.4/postgresql.conf.template
+ADD templates/postgresql/pg_hba.conf.template /usr/share/postgresql/9.4/pg_hba.conf.template
+ADD templates/postgresql/recovery.conf.template /usr/share/postgresql/9.4/recovery.conf.template
 
 # Open the container up to the world.
 EXPOSE 5432/tcp
 
-# Start PostgreSQL.
-CMD start-postgres
+# Initialize the container and start PostgreSQL.
+CMD /bin/bash -c " \
+  if [ -z ${PGSQL_INIT+x} ];then \
+    service postgresql start; \
+    tail -f /var/log/postgresql/postgresql-9.4-main.log; \
+    exit 0
+  fi; \
+  PGSQL_INIT=`echo $PGSQL_INIT | awk '{print tolower($0)}'`; \
+  if [ $PGSQL_INIT=true ];then \
+    echo 'Initializing the BDR PostgreSQL 9.4 Container.'; \
+    if [ ! -z ${PGSQL_DATA_DIR+x} ];then \
+      pgsql-change-dir $PGSQL_DATA_DIR; \
+    fi; \
+    if [ ! -z ${PGSQL_DEPLOYMENT_TYPE+x} ] && \
+       [ ! -z ${PGSQL_ROLE+x} ] && \
+       [ ! -z ${PGSQL_MASTER_ADDRESS+x} ] && \
+       [ ! -z ${PGSQL_MASTER_PORT+x} ];then \
+      if [ $PGSQL_DEPLOYMENT_TYPE=replicated ] && [ $PGSQL_ROLE=slave ];then \
+        if [ ! -z ${PGSQL_DATA_DIR+x} ];then \
+          pgsql-sync-slave -d $PGSQL_DATA_DIR \
+                           -h $PGSQL_MASTER_ADDRESS \
+                           -p $PGSQL_MASTER_PORT; \
+          trt -s /usr/share/postgresql/9.4/recovery.conf.template \
+              -d $PGSQL_DATA_DIR/recovery.conf \
+              -ps env; \
+        else \
+          pgsql-sync-slave -d /var/lib/postgresql/9.4/main \
+                           -h $PGSQL_MASTER_ADDRESS \
+                           -p $PGSQL_MASTER_PORT; \
+          trt -s /usr/share/postgresql/9.4/recovery.conf.template \
+              -d /var/lib/postgresql/9.4/main/recovery.conf \
+              -ps env; \
+        fi; \
+      fi; \
+    fi; \
+    trt -s /usr/share/postgresql/9.4/postgresql.conf.template \
+        -d /etc/postgresql/9.4/main/postgresql.conf \
+        -ps env; \
+    trt -s /usr/share/postgresql/9.4/pg_hba.conf.template \
+        -d /etc/postgresql/9.4/main/pg_hba.conf \
+        -ps env; \
+    if [ ! -z ${PGSQL_PASSWORD+x} ];then \
+      service postgresql start; \
+      sudo -u postgres psql -U postgres -d postgres \
+           -c 'alter user postgres with password '$PGSQL_PASSWORD';'; \
+      service postgresql stop; \
+    fi; \
+  fi; \
+  service postgresql start; \
+  tail -f /var/log/postgresql/postgresql-9.4-main.log; \
+"

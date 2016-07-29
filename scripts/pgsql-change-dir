@@ -1,0 +1,19 @@
+#!/bin/bash
+
+pgsql_show_help() {
+  echo "This script changes the data directory of a PostgreSQL database server."
+  echo ""
+  echo "Usage: pgsql-change-dir /path/to/new/data/directory"
+}
+
+pgsql_chg_data_dir() {
+  pg_dropcluster --stop 9.4 main
+  pg_createcluster -d $1 9.4 main
+  chown -R postgres:postgres $1
+}
+
+if [ $# -eq 1 ]; then
+  pgsql_chg_data_dir $1
+else
+  pgsql_show_help
+fi
