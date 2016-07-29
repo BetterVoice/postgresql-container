@@ -38,15 +38,20 @@
 # The default values of these variables are driven from the -D command-line
 # option or PGDATA environment variable, represented here as ConfigDir.
 
-data_directory = '{{data_directory}}'		# use data in another directory
+{% if pgsql_data_dir is not None %}
+data_directory = '{{pgsql_data_dir}}'		# use data in another directory
 					# (change requires restart)
-hba_file = '/etc/postgresql/9.5/main/pg_hba.conf'	# host-based authentication file
+{% else %}
+data_directory = '/var/lib/postgresql/9.4/main'		# use data in another directory
 					# (change requires restart)
-ident_file = '/etc/postgresql/9.5/main/pg_ident.conf'	# ident configuration file
+{% endif %}
+hba_file = '/etc/postgresql/9.4/main/pg_hba.conf'	# host-based authentication file
+					# (change requires restart)
+ident_file = '/etc/postgresql/9.4/main/pg_ident.conf'	# ident configuration file
 					# (change requires restart)
 
 # If external_pid_file is not explicitly set, no extra PID file is written.
-external_pid_file = '/var/run/postgresql/9.5-main.pid'			# write an extra PID file
+external_pid_file = '/var/run/postgresql/9.4-main.pid'			# write an extra PID file
 					# (change requires restart)
 
 
@@ -56,12 +61,27 @@ external_pid_file = '/var/run/postgresql/9.5-main.pid'			# write an extra PID fi
 
 # - Connection Settings -
 
-listen_addresses = '*'			# what IP address(es) to listen on;
+{% if pgsql_listen_addresses is not None %}
+listen_addresses = '{{pgsql_listen_addresses}}'		# what IP address(es) to listen on;
 					# comma-separated list of addresses;
 					# defaults to 'localhost'; use '*' for all
 					# (change requires restart)
-port = {{port}}				# (change requires restart)
-max_connections = {{max_connections}}			# (change requires restart)
+{% else %}
+#listen_addresses = 'localhost'		# what IP address(es) to listen on;
+					# comma-separated list of addresses;
+					# defaults to 'localhost'; use '*' for all
+					# (change requires restart)
+{% endif %}
+{% if pgsql_listen_port is not None %}
+port = {{pgsql_listen_port}}				# (change requires restart)
+{% else %}
+port = 5432				# (change requires restart)
+{% endif %}
+{% if pgsql_max_conn is not None %}
+max_connections = {{pgsql_max_conn}}			# (change requires restart)
+{% else %}
+max_connections = 100			# (change requires restart)
+{% endif %}
 # Note:  Increasing max_connections costs ~400 bytes of shared memory per
 # connection slot, plus lock space (see max_locks_per_transaction).
 #superuser_reserved_connections = 3	# (change requires restart)
@@ -83,13 +103,13 @@ ssl = true				# (change requires restart)
 					# (change requires restart)
 #ssl_prefer_server_ciphers = on		# (change requires restart)
 #ssl_ecdh_curve = 'prime256v1'		# (change requires restart)
+#ssl_renegotiation_limit = 0		# amount of data between renegotiations
 ssl_cert_file = '/etc/ssl/certs/ssl-cert-snakeoil.pem'		# (change requires restart)
 ssl_key_file = '/etc/ssl/private/ssl-cert-snakeoil.key'		# (change requires restart)
 #ssl_ca_file = ''			# (change requires restart)
 #ssl_crl_file = ''			# (change requires restart)
 #password_encryption = on
 #db_user_namespace = off
-#row_security = on
 
 # GSSAPI using Kerberos
 #krb_server_keyfile = ''
@@ -112,8 +132,13 @@ ssl_key_file = '/etc/ssl/private/ssl-cert-snakeoil.key'		# (change requires rest
 
 # - Memory -
 
-shared_buffers = {{shared_buffers}}MB			# min 128kB
+{% if pgsql_shared_buffers is not None %}
+shared_buffers = {{pgsql_shared_buffers}}			# min 128kB
 					# (change requires restart)
+{% else %}
+shared_buffers = 128MB			# min 128kB
+					# (change requires restart)
+{% endif %}
 #huge_pages = try			# on, off, or try
 					# (change requires restart)
 #temp_buffers = 8MB			# min 800kB
@@ -123,8 +148,16 @@ shared_buffers = {{shared_buffers}}MB			# min 128kB
 # per transaction slot, plus lock space (see max_locks_per_transaction).
 # It is not advisable to set max_prepared_transactions nonzero unless you
 # actively intend to use prepared transactions.
+{% if pgsql_work_mem is not None %}
+work_mem = {{pgsql_work_mem}}				# min 64kB
+{% else %}
 #work_mem = 4MB				# min 64kB
+{% endif %}
+{% if pgsql_maintenance_work_mem is not None %}
+maintenance_work_mem = {{pgsql_maintenance_work_mem}}		# min 1MB
+{% else %}
 #maintenance_work_mem = 64MB		# min 1MB
+{% endif %}
 #autovacuum_work_mem = -1		# min 1MB, or -1 to use maintenance_work_mem
 #max_stack_depth = 2MB			# min 100kB
 dynamic_shared_memory_type = posix	# the default is the first option
@@ -144,7 +177,7 @@ dynamic_shared_memory_type = posix	# the default is the first option
 
 #max_files_per_process = 1000		# min 25
 					# (change requires restart)
-#shared_preload_libraries = ''		# (change requires restart)
+shared_preload_libraries = 'bdr'		# (change requires restart)
 
 # - Cost-Based Vacuum Delay -
 
@@ -163,7 +196,11 @@ dynamic_shared_memory_type = posix	# the default is the first option
 # - Asynchronous Behavior -
 
 #effective_io_concurrency = 1		# 1-1000; 0 disables prefetching
-#max_worker_processes = 8
+{% if pgsql_max_worker_processes is not None %}
+max_worker_processes = {{pgsql_max_worker_processes}}
+{% else %}
+max_worker_processes = 10
+{% endif %}
 
 
 #------------------------------------------------------------------------------
@@ -172,10 +209,10 @@ dynamic_shared_memory_type = posix	# the default is the first option
 
 # - Settings -
 
-wal_level = {{wal_level}}			# minimal, archive, hot_standby, or logical
+wal_level = logical			# minimal, archive, hot_standby, or logical
 					# (change requires restart)
 #fsync = on				# turns forced synchronization on or off
-#synchronous_commit = on		# synchronization level;
+synchronous_commit = off		# synchronization level;
 					# off, local, remote_write, or on
 #wal_sync_method = fsync		# the default is the first option
 					# supported by the operating system:
@@ -185,10 +222,9 @@ wal_level = {{wal_level}}			# minimal, archive, hot_standby, or logical
 					#   fsync_writethrough
 					#   open_sync
 #full_page_writes = on			# recover from partial page writes
-#wal_compression = off			# enable compression of full-page writes
 #wal_log_hints = off			# also do full page writes of non-critical updates
 					# (change requires restart)
-#wal_buffers = -1			# min 32kB, -1 sets based on shared_buffers
+wal_buffers = 16MB			# min 32kB, -1 sets based on shared_buffers
 					# (change requires restart)
 #wal_writer_delay = 200ms		# 1-10000 milliseconds
 
@@ -197,15 +233,22 @@ wal_level = {{wal_level}}			# minimal, archive, hot_standby, or logical
 
 # - Checkpoints -
 
+{% if pgsql_checkpoint_segments is not None %}
+checkpoint_segments = {{pgsql_checkpoint_segments}}		# in logfile segments, min 1, 16MB each
+{% else %}
+#checkpoint_segments = 3		# in logfile segments, min 1, 16MB each
+{% endif %}
 #checkpoint_timeout = 5min		# range 30s-1h
-#max_wal_size = 1GB
-#min_wal_size = 80MB
+{% if pgsql_checkpoint_completion_target is not None %}
+checkpoint_completion_target = {{pgsql_checkpoint_completion_target}}	# checkpoint target duration, 0.0 - 1.0
+{% else %}
 #checkpoint_completion_target = 0.5	# checkpoint target duration, 0.0 - 1.0
+{% endif %}
 #checkpoint_warning = 30s		# 0 disables
 
 # - Archiving -
 
-#archive_mode = off		# enables archiving; off, on, or always
+#archive_mode = off		# allows archiving to be done
 				# (change requires restart)
 #archive_command = ''		# command to use to archive a logfile segment
 				# placeholders: %p = path of file to archive
@@ -223,20 +266,22 @@ wal_level = {{wal_level}}			# minimal, archive, hot_standby, or logical
 
 # Set these on the master and on any standby that will send replication data.
 
-{% if deployment_type == 'standalone' %}
-#max_wal_senders = 0		# max number of walsender processes
+{% if pgsql_max_wal_senders is not None %}
+max_wal_senders = {{pgsql_max_wal_senders}}		# max number of walsender processes
 				# (change requires restart)
-#wal_keep_segments = 0		# in logfile segments, 16MB each; 0 disables
-{% elif deployment_type == 'replicated' %}
-max_wal_senders = {{max_wal_senders}}		# max number of walsender processes
+{% else %}
+max_wal_senders = 10		# max number of walsender processes
 				# (change requires restart)
-wal_keep_segments = {{wal_keep_segments}}		# in logfile segments, 16MB each; 0 disables
 {% endif %}
+#wal_keep_segments = 0		# in logfile segments, 16MB each; 0 disables
 #wal_sender_timeout = 60s	# in milliseconds; 0 disables
 
-#max_replication_slots = 0	# max number of replication slots
-				# (change requires restart)
-#track_commit_timestamp = off	# collect timestamp of transaction commit
+{% if pgsql_max_replication_slots is not None %}
+max_replication_slots = {{pgsql_max_replication_slots}}	# max number of replication slots
+{% else %}
+max_replication_slots = 10	# max number of replication slots
+{% endif %}
+track_commit_timestamp = on	# collect timestamp of transaction commit
 				# (change requires restart)
 
 # - Master Server -
@@ -252,13 +297,8 @@ wal_keep_segments = {{wal_keep_segments}}		# in logfile segments, 16MB each; 0 d
 
 # These settings are ignored on a master server.
 
-{% if deployment_type == 'standalone' %}
 #hot_standby = off			# "on" allows queries during recovery
 					# (change requires restart)
-{% elif deployment_type == 'replicated' and role == 'slave' %}
-hot_standby = on			# "on" allows queries during recovery
-					# (change requires restart)
-{% endif %}
 #max_standby_archive_delay = 30s	# max delay before canceling queries
 					# when reading WAL from archive;
 					# -1 allows indefinite delay
@@ -272,8 +312,6 @@ hot_standby = on			# "on" allows queries during recovery
 #wal_receiver_timeout = 60s		# time that receiver waits for
 					# communication from master
 					# in milliseconds; 0 disables
-#wal_retrieve_retry_interval = 5s	# time to wait before retrying to
-					# retrieve WAL after a failed attempt
 
 
 #------------------------------------------------------------------------------
@@ -301,7 +339,11 @@ hot_standby = on			# "on" allows queries during recovery
 #cpu_tuple_cost = 0.01			# same scale as above
 #cpu_index_tuple_cost = 0.005		# same scale as above
 #cpu_operator_cost = 0.0025		# same scale as above
+{% if pgsql_effective_cache_size is not None %}
+effective_cache_size = {{pgsql_effective_cache_size}}
+{% else %}
 #effective_cache_size = 4GB
+{% endif %}
 
 # - Genetic Query Optimizer -
 
@@ -381,7 +423,7 @@ hot_standby = on			# "on" allows queries during recovery
 					#   warning
 					#   error
 
-#log_min_messages = warning		# values in order of decreasing detail:
+log_min_messages = warning		# values in order of decreasing detail:
 					#   debug5
 					#   debug4
 					#   debug3
@@ -425,7 +467,7 @@ hot_standby = on			# "on" allows queries during recovery
 #log_connections = off
 #log_disconnections = off
 #log_duration = off
-#log_error_verbosity = default		# terse, default, or verbose messages
+log_error_verbosity = verbose		# terse, default, or verbose messages
 #log_hostname = off
 log_line_prefix = '%t [%p-%l] %q%u@%d '			# special values:
 					#   %a = application name
@@ -449,18 +491,10 @@ log_line_prefix = '%t [%p-%l] %q%u@%d '			# special values:
 					# e.g. '<%u%%%d> '
 #log_lock_waits = off			# log lock waits >= deadlock_timeout
 #log_statement = 'none'			# none, ddl, mod, all
-#log_replication_commands = off
 #log_temp_files = -1			# log temporary files equal or larger
 					# than the specified size in kilobytes;
 					# -1 disables, 0 logs all temp files
 log_timezone = 'UTC'
-
-
-# - Process Title -
-
-cluster_name = '9.5/main'			# added to process titles if nonempty
-					# (change requires restart)
-#update_process_title = on
 
 
 #------------------------------------------------------------------------------
@@ -474,7 +508,8 @@ cluster_name = '9.5/main'			# added to process titles if nonempty
 #track_io_timing = off
 #track_functions = none			# none, pl, all
 #track_activity_query_size = 1024	# (change requires restart)
-stats_temp_directory = '/var/run/postgresql/9.5-main.pg_stat_tmp'
+#update_process_title = on
+stats_temp_directory = '/var/run/postgresql/9.4-main.pg_stat_tmp'
 
 
 # - Statistics Monitoring -
@@ -523,7 +558,7 @@ stats_temp_directory = '/var/run/postgresql/9.5-main.pg_stat_tmp'
 
 # - Statement Behavior -
 
-#search_path = '"$user", public'	# schema names
+#search_path = '"$user",public'		# schema names
 #default_tablespace = ''		# a tablespace name, '' uses the default
 #temp_tablespaces = ''			# a list of tablespace names, '' uses
 					# only default tablespace
@@ -542,7 +577,6 @@ stats_temp_directory = '/var/run/postgresql/9.5-main.pg_stat_tmp'
 #xmlbinary = 'base64'
 #xmloption = 'content'
 #gin_fuzzy_search_limit = 0
-#gin_pending_list_limit = 4MB
 
 # - Locale and Formatting -
 
@@ -602,7 +636,6 @@ default_text_search_config = 'pg_catalog.english'
 #default_with_oids = off
 #escape_string_warning = on
 #lo_compat_privileges = off
-#operator_precedence_warning = off
 #quote_all_identifiers = off
 #sql_inheritance = on
 #standard_conforming_strings = on
@@ -638,4 +671,6 @@ default_text_search_config = 'pg_catalog.english'
 # CUSTOMIZED OPTIONS
 #------------------------------------------------------------------------------
 
-# Add settings for extensions here
+# Useful options for playing with conflicts
+#bdr.default_apply_delay=2000   # milliseconds
+#bdr.log_conflicts_to_table=on

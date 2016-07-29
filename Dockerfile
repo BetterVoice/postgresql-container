@@ -29,8 +29,9 @@ RUN apt-get autoremove && apt-get autoclean
 
 # Add the utility scripts to the conainer.
 ADD scripts/pgsql-change-dir /usr/bin/pgsql-change-dir
+ADD scripts/pgsql-create-bdr-db /usr/bin/pgsql-create-bdr-db
 ADD scripts/pgsql-sync-slave /usr/bin/pgsql-sync-slave
-RUN chmod +x /usr/bin/pgsql-change-dir /usr/bin/pgsql-sync-slave
+RUN chmod +x /usr/bin/pgsql-change-dir /usr/bin/pgsql-create-bdr-db /usr/bin/pgsql-sync-slave
 
 # Add the PostgreSQL templates to the container.
 ADD templates/postgresql/postgresql.conf.template /usr/share/postgresql/9.4/postgresql.conf.template
