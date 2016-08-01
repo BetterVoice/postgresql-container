@@ -69,23 +69,23 @@ CMD /bin/bash -c " \
                            -p $PGSQL_MASTER_PORT; \
           trt -s /usr/share/postgresql/9.4/recovery.conf.template \
               -d $PGSQL_DATA_DIR/recovery.conf \
-              -ps env; \
+              -ps environment; \
         else \
           pgsql-sync-slave -d /var/lib/postgresql/9.4/main \
                            -h $PGSQL_MASTER_ADDRESS \
                            -p $PGSQL_MASTER_PORT; \
           trt -s /usr/share/postgresql/9.4/recovery.conf.template \
               -d /var/lib/postgresql/9.4/main/recovery.conf \
-              -ps env; \
+              -ps environment; \
         fi; \
       fi; \
     fi; \
     trt -s /usr/share/postgresql/9.4/postgresql.conf.template \
         -d /etc/postgresql/9.4/main/postgresql.conf \
-        -ps env; \
+        -ps environment; \
     trt -s /usr/share/postgresql/9.4/pg_hba.conf.template \
         -d /etc/postgresql/9.4/main/pg_hba.conf \
-        -ps env; \
+        -ps environment; \
     if [ ! -z ${PGSQL_PASSWORD+x} ];then \
       service postgresql start; \
       sudo -u postgres psql -U postgres -d postgres \
