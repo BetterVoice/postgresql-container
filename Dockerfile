@@ -15,7 +15,7 @@ RUN wget --quiet -O - http://packages.2ndquadrant.com/bdr/apt/AA7A6805.asc | apt
 ADD repos/2ndquadrant.list /etc/apt/sources.list.d/2ndquadrant.list
 
 # Install PostgreSQL + BDR Plugin.
-RUN apt-get update && apt-get install -y postgresql-bdr-9.4
+RUN apt-get update && apt-get install -y postgresql-bdr-9.4 postgresql-bdr-9.4-bdr-plugin
 
 # Install Dependencies and Tools.
 RUN apt-get update && apt-get install -y cron logrotate python python-dev python-pip sudo vim
