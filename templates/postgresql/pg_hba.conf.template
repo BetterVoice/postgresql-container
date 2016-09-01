@@ -94,20 +94,20 @@ host    all             all             127.0.0.1/32            md5
 host    all             all             ::1/128                 md5
 # Allow replication connections from localhost, by a user with the
 # replication privilege.
-#local   replication     postgres                                peer
-#host    replication     postgres        127.0.0.1/32            md5
-#host    replication     postgres        ::1/128                 md5
+#local   replication     postgres                               peer
+#host    replication     postgres        127.0.0.1/32           md5
+#host    replication     postgres        ::1/128                md5
 {% if (pgsql_deployment_type is defined and
        pgsql_deployment_type == "replicated") %}
 {% for node in pgsql_nodes.split(",") %}
-host    replication     postgres        {{node}}             trust
+host    replication     postgres        {{node}}                trust
 {% endfor %}
 {% endif %}
 {% if (pgsql_allowed_addresses is defined and
        not pgsql_allowed_addresses == None) %}
 {% for address in pgsql_allowed_addresses.split(",") %}
-host    all             all             {{address}}           md5
+host    all             all             {{address}}             md5
 {% endfor %}
 {% else %}
-host    all             all             0.0.0.0               md5
+host    all             all             0.0.0.0/32              md5
 {% endif %}
