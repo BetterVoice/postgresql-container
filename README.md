@@ -13,3 +13,8 @@ In order to build a cluster you need 2 or more hosts. On each of those hosts run
 $] sudo docker pull inteliquent/postgresql:9.4.8_BDR
 $] sudo docker run --name pgsql -p 5432:5432/tcp -d inteliquent/postgresql:9.4.8_BDR
 ```
+
+**_Add a database to the Cluster_**
+
+'''
+'''
