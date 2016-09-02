@@ -3,41 +3,57 @@
 pgsql_show_help() {
   echo "This script creates a new BDR enabled database."
   echo ""
-  echo "Usage: pgsql_create_bdr_db -d bdr_test -o postgres -nn node1 -ba 127.0.0.1 -bp 5433"
+  echo "Usage: pgsql_create_bdr_db -d bdr_test -o postgres -n node1 -ip 127.0.0.1 -p 5433"
   echo ""
-  echo "-d, --database               The database name."
-  echo "-o, --owner                  The database owner."
+  echo "-a, --authenticate           A flag to indicate to the script that it should authenticate with postgresql."
+  echo "-d, --database               The new database name."
+  echo "-o, --owner                  The new database owner."
+  echo "-u, --user                   The postgresql user used to create the database."
   echo ""
   echo "BDR Options:"
-  echo "-nn, --node-name             The local node name."
-  echo "-ba, --bdr-address           The address to the remote host."
-  echo "-bp, --bdr-port              The port the remote host is listening on."
+  echo "-j, --join                  A flag indicating to the script that it should join a group and not create one."
+  echo ""
+  echo "-n, --name                  The local node name."
+  echo "-ip, --address              The local address."
+  echo "-p, --port                  The local port."
+  echo ""
+  echo "-rip, --remote_address      The address to the remote host where the BDR group was created."
+  echo "-rp, --remote_port          The port on the remote host where the BDR group was created."
 }
 
 pgsql_create_bdr_db() {
   sudo -u postgres psql -U postgres -d postgres \
-       -c "CREATE DATABASE $1 OWNER $2;"
-  sudo -u postgres psql -U postgres -d $1 \
+       -c "CREATE DATABASE $2 OWNER $3;"
+  sudo -u postgres psql -U postgres -d $2 \
        -c "CREATE EXTENSION btree_gist; \
            CREATE EXTENSION bdr;"
-  sudo -u postgres psql -U postgres -d $1 \
+  sudo -u postgres psql -U postgres -d $2 \
        -c "SELECT bdr.bdr_group_create( \
-           local_node_name := '$3', \
-           node_external_dsn := 'host=$4 port=$5 dbname=$1' \
+           local_name := '$6', \
+           node_external_dsn := 'host=$7 port=$8 dbname=$2' \
           ); \
           SELECT bdr.bdr_node_join_wait_for_ready();"
 }
 
+authenticate=0
 database=
 owner=
-node_name=
-bdr_address=
-bdr_port=
+user=
+join_group=0
+name=
+address=
+port=
+remote_address=
+remote_port=
 while :; do
   case $1 in
     -\?|--help)
       pgsql_show_help
       exit
+      ;;
+    -a|--authenticate)
+      authenticate=1
+      shift
       ;;
     -d|--database)
       if [ -n "$2" ]; then
@@ -57,32 +73,61 @@ while :; do
         exit 1
       fi
       ;;
-    -nn|--node-name)
+    -u|--user)
       if [ -n "$2" ]; then
-        node_name="$2"
+        user="$2"
         shift
       else
-        printf 'ERROR: "--node-name" requires a valid name.\n' >&2
+        printf 'ERROR: "--user" requires a valid user.\n' >&2
         exit 1
       fi
       ;;
-    -ba|--bdr-address)
+    -n|--name)
       if [ -n "$2" ]; then
-        bdr_address="$2"
+        name="$2"
         shift
       else
-        printf 'ERROR: "--bdr-address" requires a valid address.\n' >&2
+        printf 'ERROR: "--name" requires a valid name.\n' >&2
         exit 1
       fi
       ;;
-    -bp|--bdr-port)
+    -j|--join)
+      join_group=1
+      shift
+    -ip|--address)
       if [ -n "$2" ]; then
-        bdr_port="$2"
+        address="$2"
         shift
       else
-        printf 'ERROR: "--bdr-port" requires a valid port number.\n' >&2
+        printf 'ERROR: "--address" requires a valid address.\n' >&2
         exit 1
       fi
+      ;;
+    -p|--port)
+      if [ -n "$2" ]; then
+        port="$2"
+        shift
+      else
+        printf 'ERROR: "--port" requires a valid port number.\n' >&2
+        exit 1
+      fi
+      ;;
+    -rip|--remote_address)
+      if [ -n "$2" ]; then
+        remote_address="$2"
+        shift
+      else
+        printf 'ERROR: "--remote_address requires a valid address.\n' >&2
+        exit 1
+      fi
+      ;;
+    -rp|--remote_port)
+      if [ -n "$2" ]; then
+        remote_port="$2"
+        shift
+      else
+        printf 'ERROR: "--remote_port requires a valid port.\n' >&2
+        exit 1
       ;;
     --)
       shift
@@ -99,10 +144,20 @@ done
 
 if [ -n "$database" ] && \
    [ -n "$owner" ] && \
-   [ -n "$node_name" ] && \
-   [ -n "$bdr_address" ] && \
-   [ -n "$bdr_port" ]; then
-  pgsql_create_bdr_db $database $owner $node_name $bdr_address $bdr_port
+   [ -n "$user" ] && \
+   [ -n "$name" ] && \
+   [ -n "$address" ] && \
+   [ -n "$port" ]; then
+  pgsql_create_bdr_db $authenticate \
+                      $database \
+                      $owner \
+                      $user \
+                      $join_group \
+                      $name \
+                      $address \
+                      $port \
+                      $remote_address \
+                      $remote_port
 else
   pgsql_show_help
 fi
