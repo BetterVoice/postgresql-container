@@ -94,6 +94,7 @@ while :; do
     -j|--join)
       join_group=1
       shift
+      ;;
     -ip|--address)
       if [ -n "$2" ]; then
         address="$2"
@@ -128,6 +129,7 @@ while :; do
       else
         printf 'ERROR: "--remote_port requires a valid port.\n' >&2
         exit 1
+      fi
       ;;
     --)
       shift
