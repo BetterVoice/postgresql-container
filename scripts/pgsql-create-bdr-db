@@ -156,9 +156,9 @@ if [ "$join_group" -eq 0 ]; then
   echo "Join Group:     false"
 else
   echo "Join Group:     true"
+  echo "Remote Address: $remote_address"
+  echo "Remote Port:    $remote_port"
 fi
-echo "Remote Address: $remote_address"
-echo "Remote Port:    $remote_port"
 echo ""
 # Create the database and add the BDR extensions.
 if [ -n "$database" ] && \
