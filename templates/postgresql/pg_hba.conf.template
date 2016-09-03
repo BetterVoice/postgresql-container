@@ -104,6 +104,11 @@ host    all             all             ::1/128                 md5
 host    replication     postgres        {{slave}}               trust
 {% endfor %}
 {% endif %}
+{% if pgsql_masters is defined and not pgsql_masters == None %}
+{% for master in pgsql_masters.split(",") %}
+host    all             postgres        {{master}}              trust
+{% endfor %}
+{% endif %}
 {% endif %}
 {% if (pgsql_allowed_addresses is defined and
        not pgsql_allowed_addresses == None) %}
@@ -111,5 +116,5 @@ host    replication     postgres        {{slave}}               trust
 host    all             all             {{address}}             md5
 {% endfor %}
 {% else %}
-host    all             all             0.0.0.0/32              md5
+host    all             all             0.0.0.0/0               md5
 {% endif %}

@@ -3,57 +3,67 @@
 pgsql_show_help() {
   echo "This script creates a new BDR enabled database."
   echo ""
-  echo "Usage: pgsql_create_bdr_db -d bdr_test -o postgres -n node1 -ip 127.0.0.1 -p 5433"
+  echo "Usage: pgsql_create_bdr_db -d bdr_test -o postgres -n node1 -ip 127.0.0.1 -p 5432"
   echo ""
-  echo "-a, --authenticate           A flag to indicate to the script that it should authenticate with postgresql."
   echo "-d, --database               The new database name."
   echo "-o, --owner                  The new database owner."
-  echo "-u, --user                   The postgresql user used to create the database."
   echo ""
   echo "BDR Options:"
-  echo "-j, --join                  A flag indicating to the script that it should join a group and not create one."
   echo ""
   echo "-n, --name                  The local node name."
   echo "-ip, --address              The local address."
   echo "-p, --port                  The local port."
   echo ""
+  echo "-j, --join                  A flag indicating to the script that it should join a group and not create one."
   echo "-rip, --remote_address      The address to the remote host where the BDR group was created."
   echo "-rp, --remote_port          The port on the remote host where the BDR group was created."
 }
 
-pgsql_create_bdr_db() {
+pgsql_create_db() {
   sudo -u postgres psql -U postgres -d postgres \
-       -c "CREATE DATABASE $2 OWNER $3;"
-  sudo -u postgres psql -U postgres -d $2 \
+       -c "CREATE DATABASE $1 OWNER $2;"
+}
+
+pgsql_create_extensions() {
+  sudo -u postgres psql -U postgres -d $1 \
        -c "CREATE EXTENSION btree_gist; \
            CREATE EXTENSION bdr;"
-  sudo -u postgres psql -U postgres -d $2 \
+}
+
+pgsql_create_bdr_group() {
+  sudo -u postgres psql -U postgres -d $4 \
        -c "SELECT bdr.bdr_group_create( \
-           local_name := '$6', \
-           node_external_dsn := 'host=$7 port=$8 dbname=$2' \
+           local_name := '$1', \
+           node_external_dsn := 'host=$2 port=$3 dbname=$4' \
           ); \
           SELECT bdr.bdr_node_join_wait_for_ready();"
 }
 
-authenticate=0
+pgsql_join_bdr_group() {
+  sudo -u postgres psql -U postgres -d $6 \
+       -c "SELECT bdr.bdr_group_create( \
+           local_name := '$1', \
+           node_external_dsn := 'host=$2 port=$3 dbname=$6', \
+           join_using_dsn := 'host=$4 port=$5 dbname=$6'
+          ); \
+          SELECT bdr.bdr_node_join_wait_for_ready();"
+}
+
 database=
 owner=
-user=
-join_group=0
 name=
 address=
 port=
+
+join_group=0
 remote_address=
 remote_port=
+
 while :; do
   case $1 in
     -\?|--help)
       pgsql_show_help
       exit
-      ;;
-    -a|--authenticate)
-      authenticate=1
-      shift
       ;;
     -d|--database)
       if [ -n "$2" ]; then
@@ -70,15 +80,6 @@ while :; do
         shift
       else
         printf 'ERROR: "--owner" requires a valid name.\n' >&2
-        exit 1
-      fi
-      ;;
-    -u|--user)
-      if [ -n "$2" ]; then
-        user="$2"
-        shift
-      else
-        printf 'ERROR: "--user" requires a valid user.\n' >&2
         exit 1
       fi
       ;;
@@ -144,22 +145,30 @@ while :; do
   shift
 done
 
-if [ -n "$database" ] && \
-   [ -n "$owner" ] && \
-   [ -n "$user" ] && \
-   [ -n "$name" ] && \
-   [ -n "$address" ] && \
-   [ -n "$port" ]; then
-  pgsql_create_bdr_db $authenticate \
-                      $database \
-                      $owner \
-                      $user \
-                      $join_group \
-                      $name \
-                      $address \
-                      $port \
-                      $remote_address \
-                      $remote_port
+# Create the database.
+pgsql_create_db $database $owner
+# Create the BDR extensions.
+pgsql_create_extensions $database
+# Create or join the BDR group.
+if [ "$join_group" -eq 0 ]; then
+  if [ -n "$database" ] && \
+     [ -n "$name" ] && \
+     [ -n "$address" ] && \
+     [ -n "$port" ]; then
+    pgsql_create_bdr_group $name $address $port $database
+  else
+    pgsql_show_help
+  fi
 else
-  pgsql_show_help
+  if [ -n "$database" ] && \
+     [ -n "$name" ] && \
+     [ -n "$address" ] && \
+     [ -n "$port" ] && \
+     [ -n "$remote_address" ] && \
+     [ -n "$remote_port" ]; then
+    pgsql_join_bdr_group $name $address $port $remote_address remote_port $database
+  else
+    pgsql_show_help
+  fi
 fi
+
