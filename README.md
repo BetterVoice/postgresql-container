@@ -11,7 +11,7 @@ In order to build a cluster you need 2 or more hosts. On each of those hosts run
 
 ```
 $] sudo docker pull inteliquent/postgresql:9.4.8_BDR
-$] sudo docker run --name pgsql -p 5432:5432/tcp -e PGSQL_INIT=true -d inteliquent/postgresql:9.4.8_BDR
+$] sudo docker run -e PGSQL_INIT=true -e PGSQL_MASTERS=127.0.0.1/32 -e PGSQL_DEPLOYMENT_TYPE=replicated --name pgsql --net=host -d inteliquent/postgresql:9.4.8_BDR
 ```
 
 ###Creating a new Database
