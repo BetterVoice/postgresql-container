@@ -41,7 +41,7 @@ pgsql_create_bdr_group() {
 
 pgsql_join_bdr_group() {
   sudo -u postgres psql -U postgres -d $6 \
-       -c "SELECT bdr.bdr_group_create( \
+       -c "SELECT bdr.bdr_group_join( \
            local_name := '$1', \
            node_external_dsn := 'host=$2 port=$3 dbname=$6', \
            join_using_dsn := 'host=$4 port=$5 dbname=$6'
