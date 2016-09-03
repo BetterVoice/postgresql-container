@@ -145,30 +145,50 @@ while :; do
   shift
 done
 
-# Create the database.
-pgsql_create_db $database $owner
-# Create the BDR extensions.
-pgsql_create_extensions $database
+# Update the console.
+echo "Database:       $database"
+echo "Owner:          $owner"
+echo "Name:           $name"
+echo "Address:        $address"
+echo "Port:           $port"
+if [ "$join_group" -eq 0 ]; then
+  echo "Join Group:     false"
+else
+  echo "Join Group:     true"
+fi
+echo "Remote Address: $remote_address"
+echo "Remote Port:    $remote_port"
+# Create the database and add the BDR extensions.
+if [ -n "$database" ] && \
+   [ -n "$owner" ]; then
+  pgsql_create_db $database $owner
+  pgsql_create_extensions $database
+else
+  pgsql_show_help
+  exit 1
+fi
 # Create or join the BDR group.
 if [ "$join_group" -eq 0 ]; then
-  if [ -n "$database" ] && \
-     [ -n "$name" ] && \
+  if [ -n "$name" ] && \
      [ -n "$address" ] && \
      [ -n "$port" ]; then
     pgsql_create_bdr_group $name $address $port $database
+    exit 0
   else
     pgsql_show_help
+    exit 1
   fi
 else
-  if [ -n "$database" ] && \
-     [ -n "$name" ] && \
+  if [ -n "$name" ] && \
      [ -n "$address" ] && \
      [ -n "$port" ] && \
      [ -n "$remote_address" ] && \
      [ -n "$remote_port" ]; then
     pgsql_join_bdr_group $name $address $port $remote_address remote_port $database
+    exit 0
   else
     pgsql_show_help
+    exit 1
   fi
 fi
 

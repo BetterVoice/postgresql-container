@@ -29,5 +29,5 @@ $] sudo docker exec -i -t pgsql /bin/bash
 When adding a database to the cluster make sure to replace the node name `-nn` and IP address `-ba` with the correct values.
 
 ```
-$] pgsql-create-bdr-db -d bdrdemo -o postgres -nn node_1 -ba 127.0.0.1 -bp 5432
+$] pgsql-create-bdr-db -d bdrdemo -o postgres -n node_1 -ip 127.0.0.1 -p 5432
 ```
